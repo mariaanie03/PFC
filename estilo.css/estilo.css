@@ -185,12 +185,94 @@ main {
 .trocar-form a:hover { text-decoration: underline; }
 
 /* Footer */
+/* --- Estilização do Rodapé --- */
+/* --- Estilização do Rodapé COMPACTO --- */
 footer {
     background-color: var(--dark-green);
     color: var(--sidebar-green);
-    padding: 20px;
+    padding: 15px 20px; /* Reduzido drasticamente */
+    margin-top: auto;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Alinha os itens no topo */
+    gap: 20px;
+}
+
+.footer-column {
+    flex: 1;
+}
+
+.footer-column h3 {
+    color: var(--gold);
+    margin-bottom: 8px; /* Espaço menor */
+    font-size: 0.95rem; /* Fonte menor */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.footer-column p, .social-links a {
+    font-size: 0.8rem; /* Fonte pequena e discreta */
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.social-links {
+    display: flex;
+    gap: 10px; /* Links agora ficam um ao lado do outro */
+}
+
+.social-links a {
+    text-decoration: none;
+    color: var(--sidebar-green);
+    border: 1px solid rgba(210, 222, 184, 0.3);
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.social-links a:hover {
+    background-color: var(--gold);
+    color: var(--dark-green);
+}
+
+/* Parte Inferior do Rodapé */
+.footer-bottom {
     text-align: center;
-    font-size: 0.9rem;
+    margin-top: 15px; /* Espaçamento menor */
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.75rem; /* Fonte mínima */
+    opacity: 0.7;
+}
+
+/* Ajuste para telas pequenas */
+@media (max-width: 600px) {
+    .footer-container {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    .social-links {
+        justify-content: center;
+    }
+}
+/* Responsividade para telas de celular */
+@media (max-width: 768px) {
+    .footer-container {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .footer-column h3 {
+        display: block;
+        width: fit-content;
+        margin: 0 auto 15px auto;
+    }
 }
 
 /* Animação de entrada */
