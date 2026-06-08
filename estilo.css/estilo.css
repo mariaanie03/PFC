@@ -327,3 +327,45 @@ footer {
 
 .alerta-perigo { border-left-color: #ff4d4d; color: #b30000; }
 .alerta-sucesso { border-left-color: #2ecc71; color: #27ae60; }
+
+/* ... (Seu código anterior) ... */
+
+main {
+    background-color: var(--main-bg);
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 1; /* Garante que o main esteja na frente do fundo */
+}
+
+.login-card {
+    background: var(--white);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    z-index: 5;
+    pointer-events: auto; /* Garante que aceite cliques */
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e1e1;
+    border-radius: 6px;
+    outline: none;
+    transition: var(--transition);
+    background-color: #fff; /* Garante visibilidade */
+    color: #333;
+    cursor: text; /* Força o cursor de texto */
+}
+
+/* Evita que o aside cubra o main em telas menores */
+aside {
+    z-index: 2;
+}
