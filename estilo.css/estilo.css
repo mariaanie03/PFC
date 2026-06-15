@@ -1,3 +1,6 @@
+/* =========================================================
+   1. VARIÁVEIS E RESET
+   ========================================================= */
 :root {
     --dark-green: #10350a;
     --logo-green: #6a8239;
@@ -21,16 +24,19 @@ body {
     flex-direction: column;
     min-height: 100vh;
     color: var(--text-black);
+    background-color: var(--main-bg);
 }
 
-/* Header */
+/* =========================================================
+   2. HEADER
+   ========================================================= */
 header {
     background-color: var(--dark-green);
     padding: 15px 40px;
     display: flex;
     align-items: center;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    z-index: 10;
+    z-index: 100; /* Garante que o topo fique acima de tudo */
 }
 
 .logo-box {
@@ -49,10 +55,13 @@ header h1 {
     letter-spacing: 2px;
 }
 
-/* Layout */
+/* =========================================================
+   3. LAYOUT PRINCIPAL (SIDEBAR + MAIN)
+   ========================================================= */
 .container {
     display: flex;
     flex: 1;
+    position: relative;
 }
 
 /* Sidebar */
@@ -61,6 +70,7 @@ aside {
     width: 250px;
     padding: 30px 0;
     box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    z-index: 50;
 }
 
 aside h2 {
@@ -90,27 +100,20 @@ nav ul li a:hover {
     color: var(--text-black);
 }
 
-/* Main Content */
+/* Conteúdo Principal */
 main {
-    background-color: var(--main-bg);
     flex: 1;
     padding: 40px;
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
+    z-index: 10;
 }
 
-#boas-vindas {
-    text-align: center;
-}
-
-#boas-vindas h2 {
-    font-size: 2.5rem;
-    color: var(--dark-green);
-    margin-bottom: 10px;
-}
-
-/* Cards e Formulários */
+/* =========================================================
+   4. CARDS E FORMULÁRIOS (AQUI ESTÁ A CORREÇÃO DE CLIQUE)
+   ========================================================= */
 .login-card {
     background: var(--white);
     padding: 40px;
@@ -118,6 +121,9 @@ main {
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     width: 100%;
     max-width: 400px;
+    position: relative;
+    z-index: 1000; /* Força o card a ficar na frente */
+    pointer-events: auto; /* Garante que aceite cliques */
 }
 
 .login-card h2 {
@@ -127,7 +133,10 @@ main {
     font-size: 1.8rem;
 }
 
-.form-group { margin-bottom: 20px; }
+.form-group { 
+    margin-bottom: 20px; 
+    position: relative;
+}
 
 .form-group label { 
     display: block; 
@@ -137,17 +146,25 @@ main {
     color: #444;
 }
 
-.form-group input, .form-group select {
+.form-group input, 
+.form-group select, 
+.form-group textarea {
     width: 100%;
     padding: 12px;
     border: 2px solid #e1e1e1;
     border-radius: 6px;
     outline: none;
     transition: var(--transition);
+    background-color: #ffffff;
+    color: #333;
+    font-size: 1rem;
+    cursor: text; /* Força o cursor de digitação */
 }
 
-.form-group input:focus, .form-group select:focus {
+.form-group input:focus, 
+.form-group select:focus {
     border-color: var(--logo-green);
+    box-shadow: 0 0 5px rgba(106, 130, 57, 0.2);
 }
 
 .btn-enviar {
@@ -184,109 +201,12 @@ main {
 
 .trocar-form a:hover { text-decoration: underline; }
 
-/* Footer */
-/* --- Estilização do Rodapé --- */
-/* --- Estilização do Rodapé COMPACTO --- */
-footer {
-    background-color: var(--dark-green);
-    color: var(--sidebar-green);
-    padding: 15px 20px; /* Reduzido drasticamente */
-    margin-top: auto;
-}
-
-.footer-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start; /* Alinha os itens no topo */
-    gap: 20px;
-}
-
-.footer-column {
-    flex: 1;
-}
-
-.footer-column h3 {
-    color: var(--gold);
-    margin-bottom: 8px; /* Espaço menor */
-    font-size: 0.95rem; /* Fonte menor */
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.footer-column p, .social-links a {
-    font-size: 0.8rem; /* Fonte pequena e discreta */
-    line-height: 1.4;
-    margin-bottom: 4px;
-}
-
-.social-links {
-    display: flex;
-    gap: 10px; /* Links agora ficam um ao lado do outro */
-}
-
-.social-links a {
-    text-decoration: none;
-    color: var(--sidebar-green);
-    border: 1px solid rgba(210, 222, 184, 0.3);
-    padding: 2px 8px;
-    border-radius: 4px;
-    transition: var(--transition);
-}
-
-.social-links a:hover {
-    background-color: var(--gold);
-    color: var(--dark-green);
-}
-
-/* Parte Inferior do Rodapé */
-.footer-bottom {
-    text-align: center;
-    margin-top: 15px; /* Espaçamento menor */
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    font-size: 0.75rem; /* Fonte mínima */
-    opacity: 0.7;
-}
-
-/* Ajuste para telas pequenas */
-@media (max-width: 600px) {
-    .footer-container {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-    .social-links {
-        justify-content: center;
-    }
-}
-/* Responsividade para telas de celular */
-@media (max-width: 768px) {
-    .footer-container {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .footer-column h3 {
-        display: block;
-        width: fit-content;
-        margin: 0 auto 15px auto;
-    }
-}
-
-/* Animação de entrada */
-.fade-in {
-    animation: fadeIn 0.5s ease-in;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Estilos para o Dashboard de Compliance */
+/* =========================================================
+   5. MONITOR DE COMPLIANCE
+   ========================================================= */
 .compliance-container {
+    width: 100%;
+    max-width: 800px;
     padding: 20px;
 }
 
@@ -297,13 +217,6 @@ footer {
     border-radius: 10px;
     background: #f9f9f9;
     margin-bottom: 20px;
-    cursor: pointer;
-}
-
-.status-panel {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
 }
 
 .log-box {
@@ -311,10 +224,11 @@ footer {
     color: #00ff00;
     font-family: 'Courier New', monospace;
     padding: 15px;
-    height: 200px;
+    height: 180px;
     overflow-y: auto;
     border-radius: 5px;
-    font-size: 0.9em;
+    font-size: 0.85rem;
+    margin-top: 10px;
 }
 
 .alerta-item {
@@ -323,49 +237,80 @@ footer {
     border-left: 5px solid;
     background: #fff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 0.9rem;
 }
 
 .alerta-perigo { border-left-color: #ff4d4d; color: #b30000; }
 .alerta-sucesso { border-left-color: #2ecc71; color: #27ae60; }
 
-/* ... (Seu código anterior) ... */
+/* =========================================================
+   6. FOOTER
+   ========================================================= */
+footer {
+    background-color: var(--dark-green);
+    color: var(--sidebar-green);
+    padding: 15px 20px;
+    margin-top: auto;
+    z-index: 100;
+}
 
-main {
-    background-color: var(--main-bg);
-    flex: 1;
-    padding: 40px;
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    z-index: 1; /* Garante que o main esteja na frente do fundo */
+    justify-content: space-between;
+    gap: 20px;
 }
 
-.login-card {
-    background: var(--white);
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    width: 100%;
-    max-width: 400px;
-    position: relative;
-    z-index: 5;
-    pointer-events: auto; /* Garante que aceite cliques */
+.footer-column h3 {
+    color: var(--gold);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    text-transform: uppercase;
 }
 
-.form-group input, .form-group select {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #e1e1e1;
-    border-radius: 6px;
-    outline: none;
-    transition: var(--transition);
-    background-color: #fff; /* Garante visibilidade */
-    color: #333;
-    cursor: text; /* Força o cursor de texto */
+.footer-column p, .social-links a {
+    font-size: 0.8rem;
+    margin-bottom: 4px;
 }
 
-/* Evita que o aside cubra o main em telas menores */
-aside {
-    z-index: 2;
+.social-links a {
+    text-decoration: none;
+    color: var(--sidebar-green);
+    border: 1px solid rgba(210, 222, 184, 0.3);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.social-links a:hover {
+    background-color: var(--gold);
+    color: var(--dark-green);
+}
+
+.footer-bottom {
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+/* =========================================================
+   7. ANIMAÇÕES E RESPONSIVIDADE
+   ========================================================= */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .container { flex-direction: column; }
+    aside { width: 100%; padding: 10px 0; }
+    .footer-container { flex-direction: column; text-align: center; }
+    .social-links { justify-content: center; }
 }
