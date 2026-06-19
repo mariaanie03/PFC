@@ -3,18 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nome do Site - Home</title>
+    <title>Portal Educacional</title>
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
-    <link href="estilo.css/estilo.css" rel="stylesheet">
-    
-    <!-- BIBLIOTECA EMAILJS -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function(){
-            // SUBSTITUA PELA SUA PUBLIC KEY DO EMAILJS
-            emailjs.init("7YQE2NjP-M4abGZkv");
-        })();
-    </script>
+    <link rel="stylesheet" href="estilo.css/estilo.css">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>emailjs.init("7YQE2NjP-M4abGZkv");</script>
 </head>
 <body>
 
@@ -35,33 +28,181 @@
             </nav>
         </aside>
 
-        <main id="conteudo-principal">
-            <div id="boas-vindas">
-                <h2>Bem-vindo ao Site</h2>
-                <p>Selecione uma opção no menu lateral.</p>
-            </div>
-        </main>
+        <main id="conteudo-principal"></main>
     </div>
 
     <footer>
-        <div class="footer-container">
-            <div class="footer-column">
-                <h3>Contato</h3>
-                <p>E-mail: contato@nomesite.com.br</p>
-            </div>
-            <div class="footer-column">
-                <h3>Siga-nos</h3>
-                <div class="social-links">
-                    <a href="#">Instagram</a>
-                </div>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Nome do Site. Todos os direitos reservados.</p>
-        </div>
+        <p>&copy; 2026 Portal Educacional. Todos os direitos reservados.</p>
     </footer>
 
-    <!-- Scripts -->
+    <!-- TEMPLATES DE TELAS -->
+
+    <template id="tpl-home">
+        <div class="fade-in">
+            <h2>Bem-vindo ao Portal</h2>
+            <p>Selecione uma opção no menu lateral para começar.</p>
+        </div>
+    </template>
+
+    <template id="tpl-login">
+        <div class="login-card fade-in">
+            <h2>Acessar Portal</h2>
+            <form id="form-login">
+                <div class="form-group"><label>E-mail:</label><input type="email" id="l-email" required></div>
+                <div class="form-group"><label>Senha:</label><input type="password" id="l-senha" required></div>
+                <button type="submit" class="btn-enviar">Entrar</button>
+            </form>
+            <p class="trocar-form">
+                <a href="#" id="link-cadastrar">Criar Conta</a> | <a href="#" id="link-recuperar">Recuperar Senha</a>
+            </p>
+        </div>
+    </template>
+
+    <template id="tpl-cadastro">
+        <div class="login-card fade-in">
+            <h2>Novo Cadastro</h2>
+            <form id="form-cadastro">
+                <div class="form-group"><label>Nome Completo:</label><input type="text" id="c-nome" required></div>
+                <div class="form-group"><label>E-mail:</label><input type="email" id="c-email" required></div>
+                <div class="form-group"><label>Senha:</label><input type="password" id="c-senha" required></div>
+                <div class="form-group">
+                    <label>Perfil:</label>
+                    <select id="tipo-usuario">
+                        <option value="aluno">Aluno</option>
+                        <option value="professor">Professor (@ifpr.edu.br)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-enviar">Solicitar Código</button>
+            </form>
+            <p class="trocar-form"><a href="#" id="link-v-login">Voltar</a></p>
+        </div>
+    </template>
+
+    <template id="tpl-pin">
+        <div class="login-card fade-in">
+            <h2>Validar PIN</h2>
+            <p id="msg-pin" style="text-align:center;"></p>
+            <input type="text" id="input-pin" maxlength="6" class="pin-input-box">
+            <button id="btn-v-pin" class="btn-enviar">Ativar</button>
+        </div>
+    </template>
+
+    <template id="tpl-dash-professor">
+        <div class="dashboard fade-in">
+            <div class="dash-header">
+                <h2 id="txt-n-prof"></h2>
+                <div class="dash-nav-btns">
+                    <button id="btn-m-cronograma-prof" class="btn-acao" style="background:var(--gold); color:black;">📅 Meu Cronograma</button>
+                    <button id="btn-n-turma" class="btn-acao">+ Nova Turma</button>
+                    <button id="btn-logout" class="btn-logout">Sair</button>
+                </div>
+            </div>
+            <div id="lista-turmas" class="grid-cards"></div>
+        </div>
+    </template>
+
+    <template id="tpl-gestao-turma">
+        <div class="dashboard fade-in" style="max-width: 1200px;">
+            <button id="btn-v-prof" class="btn-voltar">⬅ Voltar</button>
+            <div class="dash-header">
+                <h2 id="txt-g-nome"></h2>
+                <button id="btn-add-c" class="btn-acao">+ Novo Conteúdo</button>
+            </div>
+            <div class="gestao-container">
+                <section class="card-gestao"><h3>👥 Alunos</h3><div id="res-alunos" class="lista-simples"></div></section>
+                <section class="card-gestao">
+                    <h3>📅 Cronograma <button id="btn-agendar" class="btn-acao-micro">+ Agendar</button></h3>
+                    <div id="res-cronograma" class="lista-simples"></div>
+                </section>
+                <section class="card-gestao"><h3>📝 Atividades</h3><div id="res-atividades" class="lista-simples"></div></section>
+                <section class="card-gestao"><h3>📚 Materiais</h3><div id="res-materiais" class="lista-simples"></div></section>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-dash-aluno">
+        <div class="dashboard fade-in">
+            <div class="dash-header">
+                <h2 id="txt-n-aluno"></h2>
+                <div class="dash-nav-btns">
+                    <button id="btn-e-turma" class="btn-acao" style="background:#2980b9;">+ Entrar em Turma</button>
+                    <button id="btn-l-aluno" class="btn-logout">Sair</button>
+                </div>
+            </div>
+            <div id="lista-turmas-aluno" class="grid-cards"></div>
+        </div>
+    </template>
+
+    <template id="tpl-materiais-aluno">
+        <div class="dashboard fade-in">
+            <button id="btn-v-est" class="btn-voltar">⬅ Voltar</button>
+            <h2 id="txt-m-nome"></h2>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:20px;">
+                <section class="card-gestao"><h3>📅 Cronograma Definido</h3><div id="l-ag-prof" class="lista-simples"></div></section>
+                <section class="card-gestao"><h3>📚 Materiais e Conteúdos</h3><div id="l-mt-prof" class="lista-simples"></div></section>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-cronograma-pessoal">
+        <div class="dashboard fade-in" style="max-width: 1000px;">
+            <div class="dash-header"><h2>Gestão do Cronograma</h2><button id="btn-s-crono" class="btn-acao">Salvar</button></div>
+            <div class="cronograma-layout">
+                <div class="crono-sidebar">
+                    <div class="crono-box"><h4>Dias</h4><div class="dias-selecao" id="area-dias"></div></div>
+                    <div class="crono-box"><h4>Horário</h4><input type="time" id="c-inicio"> às <input type="time" id="c-fim"></div>
+                </div>
+                <div class="crono-main"><div class="crono-box" style="height:100%"><h4>Matérias</h4><textarea id="c-materias"></textarea></div></div>
+            </div>
+            <button id="btn-v-crono" class="btn-cancelar">Voltar</button>
+        </div>
+    </template>
+
+    <!-- MODAIS CENTRALIZADOS -->
+    <template id="tpl-modal-conteudo">
+        <div class="modal-overlay">
+            <div class="login-card fade-in">
+                <h3 id="mod-c-titulo">Novo Conteúdo</h3>
+                <form id="form-c">
+                    <div class="form-group"><label>Título:</label><input type="text" id="at-t" required></div>
+                    <div class="form-group"><label>Tipo:</label><select id="at-tp"><option value="link">PDF/Link</option><option value="video">Vídeo</option><option value="tarefa">Tarefa</option></select></div>
+                    <div class="form-group"><label>Link URL:</label><input type="url" id="at-u"></div>
+                    <div class="form-group"><label>Prazo Cronograma:</label><input type="date" id="at-d"></div>
+                    <button type="submit" class="btn-enviar">Gravar</button>
+                    <button type="button" id="btn-f-modal" class="btn-cancelar">Fechar</button>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-modal-agendar">
+        <div class="modal-overlay">
+            <div class="login-card fade-in">
+                <h3>Agendar para Aluno</h3>
+                <form id="form-ag">
+                    <div class="form-group"><label>Título:</label><input type="text" id="ag-t" required></div>
+                    <div class="form-group"><label>Data:</label><input type="date" id="ag-d" required></div>
+                    <div class="form-row" style="display:flex; gap:10px;"><input type="time" id="ag-h1" required> às <input type="time" id="ag-h2" required></div>
+                    <div class="form-group">
+                        <label>Para:</label>
+                        <select id="ag-sel-aluno"><option value="geral">Toda a Turma</option></select>
+                    </div>
+                    <button type="submit" class="btn-enviar">Agendar</button>
+                    <button type="button" id="btn-f-agenda" class="btn-cancelar">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-compliance">
+        <div class="dashboard fade-in">
+            <h2>🛡️ Monitor de IA</h2>
+            <textarea id="tx-c" style="width:100%; height:120px; margin-top:15px; padding:10px;"></textarea>
+            <button id="btn-anls" class="btn-enviar">Verificar Conteúdo</button>
+            <div id="rs-c"></div>
+        </div>
+    </template>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/SupaBaseClientes.js"></script>
     <script src="js/script.js"></script>

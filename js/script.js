@@ -1,409 +1,224 @@
 // =========================================================
-// 1. CONFIGURAÇÕES E VARIÁVEIS GLOBAIS
+// 1. CONFIGURAÇÕES E INICIALIZAÇÃO
 // =========================================================
+const conteudoPrincipal = document.getElementById('conteudo-principal');
 const btnHome = document.getElementById('btn-home');
 const btnCompliance = document.getElementById('btn-compliance');
 const btnLoginMenu = document.getElementById('btn-login');
-const conteudoPrincipal = document.getElementById('conteudo-principal');
 
 const SERVICE_ID = "service_6gq5cku";
 const TEMPLATE_ID = "template_ryqja5c";
-const BLACKLIST_COMPLIANCE = ['porra', 'caralho', 'merda', 'puta', 'idiota', 'pqp'];
+const BLACKLIST = ['porra', 'caralho', 'merda', 'puta', 'idiota', 'pqp'];
 
-let usuarioLogado = null; 
+let usuarioLogado = JSON.parse(localStorage.getItem('usuarioSessao')) || null;
 
-const htmlHome = `
-    <div id="boas-vindas" class="fade-in">
-        <h2>Bem-vindo ao Portal Educacional</h2>
-        <p>Utilize o menu lateral para gerenciar suas turmas, atividades e conteúdos com segurança.</p>
-    </div>
-`;
+function carregarTela(templateId) {
+    const template = document.getElementById(templateId);
+    if (!template) return;
+    const clone = template.content.cloneNode(true);
+    conteudoPrincipal.innerHTML = "";
+    conteudoPrincipal.appendChild(clone);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (usuarioLogado) renderizarDashboard();
+    else { carregarTela('tpl-home'); btnLoginMenu.textContent = "Login/Cadastro"; }
+});
 
 // =========================================================
-// 2. FUNÇÕES DE APOIO (CÓDIGOS E EMAIL)
+// 2. NAVEGAÇÃO E AUTENTICAÇÃO
 // =========================================================
-
-function gerarCodigoProfessor() {
-    const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const num = Math.floor(1000 + Math.random() * 9000); 
-    const letra = letras.charAt(Math.floor(Math.random() * letras.length));
-    return `PROF-${num}${letra}`;
-}
-
-function gerarCodigoConvite() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
-function gerarPinVerificacao() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-async function enviarEmailReal(nome, emailDestino, pin) {
-    const params = { nome: nome, pin: pin, email_to: emailDestino.toLowerCase().trim() };
-    try {
-        await emailjs.send(SERVICE_ID, TEMPLATE_ID, params);
-        alert(`Código enviado com sucesso para ${emailDestino}`);
-        return true;
-    } catch (error) {
-        alert("Erro ao enviar o e-mail de verificação.");
-        return false;
-    }
-}
-
-function fazerLogout() {
-    if (confirm("Deseja encerrar sua sessão atual?")) {
-        usuarioLogado = null;
-        btnLoginMenu.textContent = "Login/Cadastro";
-        conteudoPrincipal.innerHTML = htmlHome;
-    }
-}
-
-// =========================================================
-// 3. DASHBOARD GERAL (ROTEAMENTO)
-// =========================================================
-
 function renderizarDashboard() {
-    if (!usuarioLogado) return mostrarLogin();
+    if (!usuarioLogado) { mostrarLogin(); return; }
     btnLoginMenu.textContent = "Meu Painel";
-
-    if (usuarioLogado.tipo === 'professor') {
-        renderizarProfessor();
-    } else {
-        renderizarAluno();
-    }
+    usuarioLogado.tipo === 'professor' ? renderizarProfessor() : renderizarAluno();
 }
-
-// =========================================================
-// 4. MÓDULO DO PROFESSOR
-// =========================================================
-
-async function renderizarProfessor() {
-    conteudoPrincipal.innerHTML = `
-        <div class="dashboard fade-in">
-            <div class="dash-header">
-                <div>
-                    <h2>Painel do Professor</h2>
-                    <p>Docente: <strong>${usuarioLogado.nome}</strong></p>
-                    <span class="badge-id">SUA IDENTIFICAÇÃO: ${usuarioLogado.codigo_identificacao}</span>
-                </div>
-                <div class="dash-nav-btns">
-                    <button onclick="abrirModalCriarTurma()" class="btn-acao">+ Criar Nova Turma</button>
-                    <button onclick="fazerLogout()" class="btn-logout">Sair</button>
-                </div>
-            </div>
-            <h3 style="margin-bottom:15px; color:var(--dark-green);">Suas Turmas Ativas</h3>
-            <div id="lista-turmas" class="grid-cards">Carregando...</div>
-        </div>
-    `;
-    
-    const { data: turmas } = await _supabase.from('turmas').select('*').eq('professor_id', usuarioLogado.id);
-    const container = document.getElementById('lista-turmas');
-    
-    if (turmas && turmas.length > 0) {
-        container.innerHTML = turmas.map(t => `
-            <div class="card-item">
-                <h3>${t.nome}</h3>
-                <p class="desc-texto">${t.descricao || 'Sem descrição.'}</p>
-                <div class="info-tag">Convite: <strong>${t.codigo_convite}</strong></div>
-                <button onclick="gerenciarTurma(${t.id}, '${t.nome}')" class="btn-pequeno">Gerenciar Turma</button>
-            </div>
-        `).join('');
-    } else {
-        container.innerHTML = `<p class="aviso-vazio">Você ainda não criou turmas.</p>`;
-    }
-}
-
-function abrirModalCriarTurma() {
-    conteudoPrincipal.innerHTML = `
-        <div class="login-card fade-in" style="max-width: 550px;">
-            <div class="form-header">
-                <h2>Nova Turma</h2>
-                <p>Preencha os detalhes para gerar o código de convite.</p>
-            </div>
-            <form id="form-criar-turma">
-                <div class="form-group">
-                    <label>Nome da Turma / Disciplina:</label>
-                    <input type="text" id="t-nome" required placeholder="Ex: Programação I">
-                </div>
-                <div class="form-group">
-                    <label>Descrição:</label>
-                    <textarea id="t-desc" rows="3" placeholder="Informações gerais sobre a turma..."></textarea>
-                </div>
-                <div class="form-row" style="display:flex; gap:10px;">
-                    <div class="form-group" style="flex:1;">
-                        <label>Cód. Convite:</label>
-                        <input type="text" id="t-convite" value="${gerarCodigoConvite()}" readonly>
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <label>Confirme seu ID Prof:</label>
-                        <input type="text" id="t-id-prof" placeholder="${usuarioLogado.codigo_identificacao}" required>
-                    </div>
-                </div>
-                <button type="submit" class="btn-enviar">Gravar e Publicar Turma</button>
-                <button type="button" onclick="renderizarProfessor()" class="btn-logout" style="background:#888; width:100%; margin-top:10px;">Cancelar</button>
-            </form>
-        </div>
-    `;
-
-    document.getElementById('form-criar-turma').onsubmit = async (e) => {
-        e.preventDefault();
-        if (document.getElementById('t-id-prof').value.trim() !== usuarioLogado.codigo_identificacao) {
-            return alert("Erro: ID de Professor não confere!");
-        }
-
-        const { error } = await _supabase.from('turmas').insert([{
-            nome: document.getElementById('t-nome').value,
-            descricao: document.getElementById('t-desc').value,
-            codigo_convite: document.getElementById('t-convite').value,
-            professor_id: usuarioLogado.id
-        }]);
-
-        if (error) alert("Erro ao salvar: " + error.message);
-        else { alert("Turma criada!"); renderizarProfessor(); }
-    };
-}
-
-// =========================================================
-// 5. MÓDULO DO ALUNO
-// =========================================================
-
-async function renderizarAluno() {
-    conteudoPrincipal.innerHTML = `
-        <div class="dashboard fade-in">
-            <div class="dash-header">
-                <div>
-                    <h2>Painel do Aluno</h2>
-                    <p>Aluno(a): <strong>${usuarioLogado.nome}</strong></p>
-                </div>
-                <div class="dash-nav-btns">
-                    <button onclick="abrirModalEntrarTurma()" class="btn-acao" style="background:#2980b9;">+ Entrar em Turma</button>
-                    <button onclick="fazerLogout()" class="btn-logout">Sair</button>
-                </div>
-            </div>
-            <h3 style="margin-bottom:15px; color:#2980b9;">Minhas Matrículas</h3>
-            <div id="lista-turmas-aluno" class="grid-cards">Carregando...</div>
-        </div>
-    `;
-
-    // 1. Busca os IDs das turmas vinculadas ao aluno
-    const { data: vinculos, error: errV } = await _supabase.from('turma_alunos').select('turma_id').eq('aluno_id', usuarioLogado.id);
-
-    const container = document.getElementById('lista-turmas-aluno');
-    if (errV) return container.innerHTML = "Erro ao buscar vínculos.";
-    if (!vinculos || vinculos.length === 0) {
-        return container.innerHTML = `<p class="aviso-vazio">Você ainda não está em nenhuma turma. Utilize o código de convite do professor.</p>`;
-    }
-
-    // 2. Busca os detalhes dessas turmas
-    const ids = vinculos.map(v => v.turma_id);
-    const { data: turmas, error: errT } = await _supabase.from('turmas').select('*').in('id', ids);
-
-    if (errT) return container.innerHTML = "Erro ao buscar detalhes das turmas.";
-
-    container.innerHTML = turmas.map(t => `
-        <div class="card-item" style="border-top-color:#2980b9;">
-            <h3>${t.nome}</h3>
-            <p class="desc-texto">${t.descricao || 'Sem descrição.'}</p>
-            <button onclick="verAtividadesAluno(${t.id}, '${t.nome}')" class="btn-pequeno" style="background:#2980b9;">Ver Atividades</button>
-        </div>
-    `).join('');
-}
-
-function abrirModalEntrarTurma() {
-    conteudoPrincipal.innerHTML = `
-        <div class="login-card fade-in" style="max-width: 500px;">
-            <div class="form-header">
-                <h2>Participar de uma Turma</h2>
-                <p>Insira o código de convite de 6 dígitos.</p>
-            </div>
-            <form id="form-entrar-turma">
-                <div class="form-group">
-                    <label>Código da Turma:</label>
-                    <input type="text" id="t-codigo-busca" required placeholder="Ex: A1B2C3" maxlength="6" style="text-align:center; font-size:1.8rem; text-transform: uppercase;">
-                </div>
-                <button type="submit" class="btn-enviar" style="background:#2980b9;">Confirmar Matrícula</button>
-                <button type="button" onclick="renderizarAluno()" class="btn-cancelar">Cancelar</button>
-            </form>
-        </div>
-    `;
-
-    document.getElementById('form-entrar-turma').onsubmit = async (e) => {
-        e.preventDefault();
-        const codigo = document.getElementById('t-codigo-busca').value.toUpperCase().trim();
-
-        // Verificar se turma existe
-        const { data: turma } = await _supabase.from('turmas').select('id, nome').eq('codigo_convite', codigo).maybeSingle();
-
-        if (!turma) return alert("Código inválido! Nenhuma turma encontrada.");
-
-        // Verificar se já está matriculado
-        const { data: existe } = await _supabase.from('turma_alunos').select('id').eq('turma_id', turma.id).eq('aluno_id', usuarioLogado.id).maybeSingle();
-
-        if (existe) {
-            alert("Você já faz parte desta turma!");
-            renderizarAluno();
-            return;
-        }
-
-        // Criar vínculo
-        const { error } = await _supabase.from('turma_alunos').insert([{ turma_id: turma.id, aluno_id: usuarioLogado.id }]);
-
-        if (error) alert("Erro: " + error.message);
-        else { alert(`Bem-vindo à turma: ${turma.nome}`); renderizarAluno(); }
-    };
-}
-
-// =========================================================
-// 6. LOGIN E CADASTRO
-// =========================================================
 
 function mostrarLogin() {
-    conteudoPrincipal.innerHTML = `
-        <div class="login-card fade-in">
-            <h2>Acessar Portal</h2>
-            <form id="form-executar">
-                <div class="form-group"><label>E-mail:</label><input type="email" id="l-email" required></div>
-                <div class="form-group"><label>Senha:</label><input type="password" id="l-senha" required></div>
-                <button type="submit" class="btn-enviar">Entrar</button>
-            </form>
-            <p class="trocar-form">Não tem conta? <a href="#" id="link-cadastrar">Cadastre-se</a></p>
-        </div>
-    `;
-    adicionarEventosForm();
+    carregarTela('tpl-login');
+    document.getElementById('link-cadastrar').onclick = (e) => { e.preventDefault(); mostrarCadastro(); };
+    document.getElementById('form-login').onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('l-email').value.toLowerCase().trim();
+        const senha = document.getElementById('l-senha').value;
+        const { data } = await _supabase.from('usuarios').select('*').eq('email', email).eq('senha', senha).single();
+        if (data) { 
+            usuarioLogado = data; 
+            localStorage.setItem('usuarioSessao', JSON.stringify(data)); 
+            renderizarDashboard(); 
+        } else alert("Acesso Negado.");
+    };
 }
 
 function mostrarCadastro() {
-    conteudoPrincipal.innerHTML = `
-        <div class="login-card fade-in">
-            <h2>Criar Cadastro</h2>
-            <form id="form-executar">
-                <div class="form-group"><label>Nome Completo:</label><input type="text" id="c-nome" required></div>
-                <div class="form-group"><label>E-mail:</label><input type="email" id="c-email" required placeholder="professor@ifpr.edu.br"></div>
-                <div class="form-group"><label>Senha:</label><input type="password" id="c-senha" required></div>
-                <div class="form-group">
-                    <label>Perfil:</label>
-                    <select id="tipo-usuario">
-                        <option value="aluno">Aluno</option>
-                        <option value="professor">Professor (E-mail @ifpr.edu.br)</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-enviar">Solicitar Código de Ativação</button>
-            </form>
-            <p class="trocar-form"><a href="#" id="link-login">Já tenho conta</a></p>
-        </div>
-    `;
-    adicionarEventosForm();
-}
-
-function adicionarEventosForm() {
-    const form = document.getElementById('form-executar');
-    if (!form) return;
-
-    document.getElementById('link-cadastrar')?.addEventListener('click', (e) => { e.preventDefault(); mostrarCadastro(); });
-    document.getElementById('link-login')?.addEventListener('click', (e) => { e.preventDefault(); mostrarLogin(); });
-
-    form.onsubmit = async (e) => {
+    carregarTela('tpl-cadastro');
+    document.getElementById('link-v-login').onclick = (e) => { e.preventDefault(); mostrarLogin(); };
+    document.getElementById('form-cadastro').onsubmit = async (e) => {
         e.preventDefault();
-        const nomeInput = document.getElementById('c-nome');
+        const nome = document.getElementById('c-nome').value;
+        const email = document.getElementById('c-email').value.toLowerCase().trim();
+        const tipo = document.getElementById('tipo-usuario').value;
+        if (tipo === 'professor' && !email.includes('ifpr.edu.br')) return alert("Use @ifpr.edu.br");
+        
+        const pin = Math.floor(100000 + Math.random() * 900000).toString();
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, { nome, pin, email_to: email });
+        
+        carregarTela('tpl-pin');
+        document.getElementById('msg-pin').innerText = `Código enviado para ${email}`;
+        document.getElementById('btn-v-pin').onclick = async () => {
+            if (document.getElementById('input-pin').value === pin) {
+                await _supabase.from('usuarios').insert([{ nome, email, senha: document.getElementById('c-senha').value, tipo, email_validado: true }]);
+                mostrarLogin();
+            } else alert("Código Errado.");
+        };
+    };
+}
 
-        if (nomeInput) { // CADASTRO
-            const email = document.getElementById('c-email').value.toLowerCase().trim();
-            const tipo = document.getElementById('tipo-usuario').value;
-            const senha = document.getElementById('c-senha').value;
+// =========================================================
+// 3. MÓDULO DO PROFESSOR
+// =========================================================
+async function renderizarProfessor() {
+    carregarTela('tpl-dash-professor');
+    document.getElementById('txt-n-prof').innerText = `Docente: ${usuarioLogado.nome}`;
+    document.getElementById('btn-logout').onclick = fazerLogout;
+    document.getElementById('btn-m-cronograma-prof').onclick = renderizarCronogramaPessoal;
+    document.getElementById('btn-n-turma').onclick = () => {
+        const n = prompt("Nome da Turma:");
+        if(n) _supabase.from('turmas').insert([{ nome: n, codigo_convite: Math.random().toString(36).substring(7).toUpperCase(), professor_id: usuarioLogado.id }]).then(() => renderizarProfessor());
+    };
 
-            if (tipo === 'professor' && !email.includes('ifpr.edu.br')) {
-                return alert("Erro: Professores devem usar e-mail institucional @ifpr.edu.br");
-            }
+    const { data: turmas } = await _supabase.from('turmas').select('*').eq('professor_id', usuarioLogado.id);
+    const container = document.getElementById('lista-turmas');
+    container.innerHTML = turmas?.map(t => `<div class="card-item"><h3>${t.nome}</h3><div class="info-tag">Código: ${t.codigo_convite}</div><br><button onclick="gerenciarTurma(${t.id}, '${t.nome}')" class="btn-pequeno">Gerenciar</button></div>`).join('') || "Sem turmas.";
+}
 
-            const pin = gerarPinVerificacao();
-            const codProf = (tipo === 'professor') ? gerarCodigoProfessor() : null;
-            
-            if (await enviarEmailReal(nomeInput.value, email, pin)) {
-                mostrarTelaValidacao(email, pin, nomeInput.value, tipo, senha, codProf);
-            }
-        } else { // LOGIN
-            const email = document.getElementById('l-email').value.toLowerCase().trim();
-            const senha = document.getElementById('l-senha').value;
-            const { data } = await _supabase.from('usuarios').select('*').eq('email', email).eq('senha', senha).single();
-            if (data) { usuarioLogado = data; renderizarDashboard(); }
-            else alert("Credenciais incorretas.");
+async function gerenciarTurma(id, nome) {
+    carregarTela('tpl-gestao-turma');
+    document.getElementById('txt-g-nome').innerText = `Gestão: ${nome}`;
+    document.getElementById('btn-v-prof').onclick = renderizarProfessor;
+    document.getElementById('btn-add-c').onclick = () => abrirModalConteudo(id);
+    document.getElementById('btn-agendar').onclick = () => abrirModalAgendar(id);
+    carregarDadosGestao(id);
+}
+
+// =========================================================
+// 4. MÓDULO DO ALUNO (ACESSO CORRIGIDO)
+// =========================================================
+async function renderizarAluno() {
+    carregarTela('tpl-dash-aluno');
+    document.getElementById('txt-n-aluno').innerText = `Estudante: ${usuarioLogado.nome}`;
+    document.getElementById('btn-l-aluno').onclick = fazerLogout;
+    document.getElementById('btn-e-turma').onclick = async () => {
+        const c = prompt("Código:");
+        if(!c) return;
+        const { data: t } = await _supabase.from('turmas').select('id').eq('codigo_convite', c.toUpperCase()).single();
+        if(t) await _supabase.from('turma_alunos').insert([{ turma_id: t.id, aluno_id: usuarioLogado.id }]).then(() => renderizarAluno());
+    };
+
+    const { data: v } = await _supabase.from('turma_alunos').select('turma_id').eq('aluno_id', usuarioLogado.id);
+    const container = document.getElementById('lista-turmas-aluno');
+    if(!v || v.length === 0) return container.innerHTML = "Você ainda não está em turmas.";
+
+    const { data: turmas } = await _supabase.from('turmas').select('*').in('id', v.map(i => i.turma_id));
+    container.innerHTML = turmas.map(t => `<div class="card-item" style="border-top-color:#2980b9;"><h3>${t.nome}</h3><button onclick="verMateriaisAluno(${t.id}, '${t.nome}')" class="btn-pequeno" style="background:#2980b9;">Acessar</button></div>`).join('');
+}
+
+async function verMateriaisAluno(id, nome) {
+    carregarTela('tpl-materiais-aluno');
+    document.getElementById('txt-m-nome').innerText = nome;
+    document.getElementById('btn-v-est').onclick = renderizarAluno;
+
+    const { data: agenda } = await _supabase.from('cronograma_professor').select('*').eq('turma_id', id).or(`aluno_id.is.null,aluno_id.eq.${usuarioLogado.id}`);
+    const { data: ativ } = await _supabase.from('atividades').select('*').eq('turma_id', id);
+
+    document.getElementById('l-ag-prof').innerHTML = agenda?.map(a => `<div class="item-cronograma"><strong>${a.data}</strong>: ${a.titulo}</div>`).join('') || "Nada agendado.";
+    document.getElementById('l-mt-prof').innerHTML = ativ?.map(a => `<div class="item-cronograma"><strong>${a.titulo}</strong> ${a.url_midia ? `<a href="${a.url_midia}" target="_blank">Abrir</a>`:''}</div>`).join('') || "Vazio.";
+}
+
+// =========================================================
+// 5. CRONOGRAMA PESSOAL (EDIÇÃO PELO PROFESSOR)
+// =========================================================
+function renderizarCronogramaPessoal() {
+    carregarTela('tpl-cronograma-pessoal');
+    document.getElementById('btn-v-crono').onclick = renderizarDashboard;
+    document.getElementById('btn-s-crono').onclick = salvarCronograma;
+    const area = document.getElementById('area-dias');
+    area.innerHTML = ['S','T','Q','Q','S','S','D'].map((d, i) => `<div><input type="checkbox" id="dia-${i}" class="dia-check"><label for="dia-${i}">${d}</label></div>`).join('');
+
+    _supabase.from('cronograma_pessoal').select('*').eq('aluno_id', usuarioLogado.id).maybeSingle().then(({data}) => {
+        if(data) {
+            document.getElementById('c-inicio').value = data.horario_inicio;
+            document.getElementById('c-fim').value = data.horario_fim;
+            document.getElementById('c-materias').value = data.materias;
+            data.dias.split(',').forEach(d => { if(document.getElementById(`dia-${d}`)) document.getElementById(`dia-${d}`).checked = true; });
         }
-    };
+    });
 }
 
-function mostrarTelaValidacao(email, pinCorreto, nome, tipo, senha, codProf) {
-    conteudoPrincipal.innerHTML = `
-        <div class="login-card fade-in">
-            <h2>Verificar E-mail</h2>
-            <p style="text-align:center">Código enviado para: <strong>${email}</strong></p>
-            <input type="text" id="input-pin" maxlength="6" style="text-align:center; font-size:2rem; width:100%; margin: 20px 0;">
-            <button id="btn-confirmar-pin" class="btn-enviar">Ativar Minha Conta</button>
-        </div>
-    `;
-    document.getElementById('btn-confirmar-pin').onclick = async () => {
-        if (document.getElementById('input-pin').value === pinCorreto) {
-            const { error } = await _supabase.from('usuarios').insert([{ nome, email, senha, tipo, codigo_identificacao: codProf, email_validado: true }]);
-            if (!error) { alert("Sucesso! Conta ativada."); mostrarLogin(); }
-            else alert("Erro ao salvar: " + error.message);
-        } else alert("Código inválido!");
-    };
+async function salvarCronograma() {
+    const dias = [];
+    document.querySelectorAll('.dia-check:checked').forEach(el => dias.push(el.id.split('-')[1]));
+    await _supabase.from('cronograma_pessoal').upsert({ aluno_id: usuarioLogado.id, dias: dias.join(','), horario_inicio: document.getElementById('c-inicio').value, horario_fim: document.getElementById('c-fim').value, materias: document.getElementById('c-materias').value });
+    alert("Salvo!");
 }
 
 // =========================================================
-// 7. GESTÃO DE CONTEÚDO E COMPLIANCE
+// 6. FUNÇÕES GERAIS E EXTRAS
 // =========================================================
+function fazerLogout() { localStorage.removeItem('usuarioSessao'); usuarioLogado = null; location.reload(); }
 
-function gerenciarTurma(id, nome) {
-    conteudoPrincipal.innerHTML = `
-        <div class="dashboard fade-in">
-            <button onclick="renderizarProfessor()" class="btn-voltar">⬅ Voltar</button>
-            <h2>Gestão: ${nome}</h2>
-            <div class="gestao-container" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
-                <section class="card-gestao" style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-                    <h3>Lista de Alunos</h3>
-                    <div id="res-alunos">Buscando alunos...</div>
-                </section>
-                <section class="card-gestao" style="border:1px solid #ddd; padding:15px; border-radius:8px;">
-                    <h3>Cronograma / Atividades</h3>
-                    <p>Em breve: gerenciamento de datas.</p>
-                </section>
-            </div>
-        </div>
-    `;
-    carregarAlunosProfessor(id);
+async function carregarDadosGestao(turmaId) {
+    const { data: alunos } = await _supabase.from('turma_alunos').select('usuarios(id, nome)').eq('turma_id', turmaId);
+    document.getElementById('res-alunos').innerHTML = alunos?.map(a => `<div>${a.usuarios.nome}</div>`).join('') || "Vazio.";
+
+    const { data: ativ } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
+    const { data: agenda } = await _supabase.from('cronograma_professor').select('*, usuarios(nome)').eq('turma_id', turmaId);
+
+    const rAt = (at) => `<div class="item-cronograma"><span>${at.titulo}</span><div><button onclick='editarAtiv(${JSON.stringify(at)})'>✏️</button><button onclick="excluir(${at.id}, 'at', ${turmaId})">🗑️</button></div></div>`;
+    document.getElementById('res-cronograma').innerHTML = agenda?.map(a => `<div class="item-cronograma" style="background:#fff9e6"><span>${a.data} | ${a.titulo}</span><button onclick="excluir(${a.id}, 'ag', ${turmaId})">🗑️</button></div>`).join('') || "---";
+    document.getElementById('res-atividades').innerHTML = ativ?.filter(a => a.tipo==='tarefa').map(rAt).join('') || "---";
+    document.getElementById('res-materiais').innerHTML = ativ?.filter(a => a.tipo!=='tarefa').map(rAt).join('') || "---";
 }
 
-async function carregarAlunosProfessor(idTurma) {
-    const { data } = await _supabase.from('turma_alunos').select('usuarios(nome, email)').eq('turma_id', idTurma);
-    const res = document.getElementById('res-alunos');
-    if (data && data.length > 0) {
-        res.innerHTML = data.map(item => `<div style="padding:5px; border-bottom:1px solid #eee;">${item.usuarios.nome} <small>(${item.usuarios.email})</small></div>`).join('');
-    } else {
-        res.innerHTML = "Nenhum aluno matriculado.";
-    }
+function abrirModalConteudo(turmaId, at = null) {
+    document.body.appendChild(document.getElementById('tpl-modal-conteudo').content.cloneNode(true));
+    const modal = document.querySelector('.modal-overlay');
+    if(at) { document.getElementById('mod-c-titulo').innerText = "Editar"; document.getElementById('at-t').value = at.titulo; document.getElementById('at-tp').value = at.tipo; document.getElementById('at-u').value = at.url_midia; }
+    document.getElementById('form-c').onsubmit = async (e) => {
+        e.preventDefault();
+        const obj = { turma_id: turmaId, titulo: document.getElementById('at-t').value, tipo: document.getElementById('at-tp').value, url_midia: document.getElementById('at-u').value, data_entrega: document.getElementById('at-d').value || null };
+        if(at) await _supabase.from('atividades').update(obj).eq('id', at.id);
+        else await _supabase.from('atividades').insert([obj]);
+        modal.remove(); carregarDadosGestao(turmaId);
+    };
+    document.getElementById('btn-f-modal').onclick = () => modal.remove();
 }
 
-function verAtividadesAluno(id, nome) {
-    alert("Funcionalidade de Atividades em breve para a turma: " + nome);
+async function abrirModalAgendar(turmaId) {
+    const clone = document.getElementById('tpl-modal-agendar').content.cloneNode(true);
+    const { data: alunos } = await _supabase.from('turma_alunos').select('usuarios(id, nome)').eq('turma_id', turmaId);
+    const sel = clone.querySelector('#ag-sel-aluno');
+    alunos?.forEach(a => { const o = document.createElement('option'); o.value=a.usuarios.id; o.textContent=a.usuarios.nome; sel.appendChild(o); });
+    document.body.appendChild(clone);
+    const modal = document.querySelector('.modal-overlay');
+    document.getElementById('form-ag').onsubmit = async (e) => {
+        e.preventDefault();
+        const aId = document.getElementById('ag-sel-aluno').value;
+        await _supabase.from('cronograma_professor').insert([{ turma_id: turmaId, titulo: document.getElementById('ag-t').value, data: document.getElementById('ag-d').value, hora_inicio: document.getElementById('ag-h1').value, hora_fim: document.getElementById('ag-h2').value, aluno_id: aId==='geral'?null:aId }]);
+        modal.remove(); carregarDadosGestao(turmaId);
+    };
+    document.getElementById('btn-f-agenda').onclick = () => modal.remove();
 }
 
-btnHome.onclick = (e) => { e.preventDefault(); conteudoPrincipal.innerHTML = htmlHome; };
-btnLoginMenu.onclick = (e) => { e.preventDefault(); usuarioLogado ? renderizarDashboard() : mostrarLogin(); };
-btnCompliance.onclick = (e) => { e.preventDefault(); mostrarCompliance(); };
+const editarAtiv = (at) => abrirModalConteudo(at.turma_id, at);
+async function excluir(id, t, turmaId) { await _supabase.from(t==='ag'?'cronograma_professor':'atividades').delete().eq('id', id); carregarDadosGestao(turmaId); }
 
-function mostrarCompliance() {
-    conteudoPrincipal.innerHTML = `
-        <div class="dashboard fade-in">
-            <h2>🛡️ Monitor de Compliance AI</h2>
-            <textarea id="text-monitor" placeholder="Insira o texto para analisar..." style="width:100%; height:120px; padding:15px; margin:15px 0; border-radius:8px;"></textarea>
-            <button onclick="analisarTexto()" class="btn-enviar">Verificar Segurança</button>
-            <div id="res-c" style="margin-top:20px;"></div>
-        </div>
-    `;
-}
-function analisarTexto() {
-    const t = document.getElementById('text-monitor').value.toLowerCase();
-    const res = document.getElementById('res-c');
-    const erro = BLACKLIST_COMPLIANCE.some(p => t.includes(p));
-    res.innerHTML = erro ? `<div class="alerta-perigo" style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px;">⚠️ Risco Detectado: Linguagem imprópria.</div>` : `<div class="alerta-sucesso" style="background:#d4edda; color:#155724; padding:15px; border-radius:8px;">✅ Conteúdo Seguro.</div>`;
-}
+btnHome.onclick = () => { carregarTela('tpl-home'); btnLoginMenu.textContent = usuarioLogado ? "Meu Painel" : "Login/Cadastro"; };
+btnLoginMenu.onclick = renderizarDashboard;
+btnCompliance.onclick = () => {
+    carregarTela('tpl-compliance');
+    document.getElementById('btn-anls').onclick = () => {
+        const erro = BLACKLIST.some(p => document.getElementById('tx-c').value.toLowerCase().includes(p));
+        document.getElementById('rs-c').innerHTML = erro ? "<div class='alerta-perigo'>Inadequado</div>" : "<div class='alerta-sucesso'>Seguro</div>";
+    };
+};
