@@ -27,15 +27,14 @@
                 </ul>
             </nav>
         </aside>
-
         <main id="conteudo-principal"></main>
     </div>
 
-    <footer>
-        <p>&copy; 2026 Portal Educacional. Todos os direitos reservados.</p>
-    </footer>
+    <footer><p>&copy; 2026 Portal Educacional. Todos os direitos reservados.</p></footer>
 
-    <!-- TEMPLATES DE TELAS -->
+    <!-- ==========================================
+         TEMPLATES (ESTRUTURA DAS TELAS)
+         ========================================== -->
 
     <template id="tpl-home">
         <div class="fade-in">
@@ -53,7 +52,7 @@
                 <button type="submit" class="btn-enviar">Entrar</button>
             </form>
             <p class="trocar-form">
-                <a href="#" id="link-cadastrar">Criar Conta</a> | <a href="#" id="link-recuperar">Recuperar Senha</a>
+                <a href="#" id="link-cadastrar">Criar Conta</a> | <a href="#" id="link-recuperar">Esqueci a senha</a>
             </p>
         </div>
     </template>
@@ -72,9 +71,9 @@
                         <option value="professor">Professor (@ifpr.edu.br)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-enviar">Solicitar Código</button>
+                <button type="submit" class="btn-enviar">Solicitar Ativação</button>
             </form>
-            <p class="trocar-form"><a href="#" id="link-v-login">Voltar</a></p>
+            <p class="trocar-form"><a href="#" id="link-v-login">Já tenho conta</a></p>
         </div>
     </template>
 
@@ -82,11 +81,12 @@
         <div class="login-card fade-in">
             <h2>Validar PIN</h2>
             <p id="msg-pin" style="text-align:center;"></p>
-            <input type="text" id="input-pin" maxlength="6" class="pin-input-box">
+            <input type="text" id="input-pin" maxlength="6" style="text-align:center; font-size:2rem; width:100%; margin:20px 0; letter-spacing:8px;">
             <button id="btn-v-pin" class="btn-enviar">Ativar</button>
         </div>
     </template>
 
+    <!-- DASHBOARDS -->
     <template id="tpl-dash-professor">
         <div class="dashboard fade-in">
             <div class="dash-header">
@@ -98,6 +98,19 @@
                 </div>
             </div>
             <div id="lista-turmas" class="grid-cards"></div>
+        </div>
+    </template>
+
+    <template id="tpl-dash-aluno">
+        <div class="dashboard fade-in">
+            <div class="dash-header">
+                <h2 id="txt-n-aluno"></h2>
+                <div class="dash-nav-btns">
+                    <button id="btn-e-turma" class="btn-acao" style="background:#2980b9;">+ Entrar em Turma</button>
+                    <button id="btn-l-aluno" class="btn-logout">Sair</button>
+                </div>
+            </div>
+            <div id="lista-turmas-aluno" class="grid-cards"></div>
         </div>
     </template>
 
@@ -120,26 +133,13 @@
         </div>
     </template>
 
-    <template id="tpl-dash-aluno">
-        <div class="dashboard fade-in">
-            <div class="dash-header">
-                <h2 id="txt-n-aluno"></h2>
-                <div class="dash-nav-btns">
-                    <button id="btn-e-turma" class="btn-acao" style="background:#2980b9;">+ Entrar em Turma</button>
-                    <button id="btn-l-aluno" class="btn-logout">Sair</button>
-                </div>
-            </div>
-            <div id="lista-turmas-aluno" class="grid-cards"></div>
-        </div>
-    </template>
-
     <template id="tpl-materiais-aluno">
         <div class="dashboard fade-in">
             <button id="btn-v-est" class="btn-voltar">⬅ Voltar</button>
             <h2 id="txt-m-nome"></h2>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:20px;">
-                <section class="card-gestao"><h3>📅 Cronograma Definido</h3><div id="l-ag-prof" class="lista-simples"></div></section>
-                <section class="card-gestao"><h3>📚 Materiais e Conteúdos</h3><div id="l-mt-prof" class="lista-simples"></div></section>
+                <section class="card-gestao"><h3>📅 Agendado pelo Prof.</h3><div id="l-ag-prof" class="lista-simples"></div></section>
+                <section class="card-gestao"><h3>📚 Conteúdos</h3><div id="l-mt-prof" class="lista-simples"></div></section>
             </div>
         </div>
     </template>
@@ -149,8 +149,8 @@
             <div class="dash-header"><h2>Gestão do Cronograma</h2><button id="btn-s-crono" class="btn-acao">Salvar</button></div>
             <div class="cronograma-layout">
                 <div class="crono-sidebar">
-                    <div class="crono-box"><h4>Dias</h4><div class="dias-selecao" id="area-dias"></div></div>
-                    <div class="crono-box"><h4>Horário</h4><input type="time" id="c-inicio"> às <input type="time" id="c-fim"></div>
+                    <div class="crono-box"><h4>Dias de estudos</h4><div class="dias-selecao" id="area-dias"></div></div>
+                    <div class="crono-box"><h4>Horários</h4><input type="time" id="c-inicio"> às <input type="time" id="c-fim"></div>
                 </div>
                 <div class="crono-main"><div class="crono-box" style="height:100%"><h4>Matérias</h4><textarea id="c-materias"></textarea></div></div>
             </div>
@@ -158,7 +158,24 @@
         </div>
     </template>
 
-    <!-- MODAIS CENTRALIZADOS -->
+    <!-- MODAIS -->
+    <template id="tpl-modal-criar-turma">
+        <div class="modal-overlay">
+            <div class="login-card fade-in" style="max-width: 500px;">
+                <h3>Criar Nova Turma</h3>
+                <form id="form-criar-turma">
+                    <div class="form-group"><label>Nome da Turma:</label><input type="text" id="turma-nome" required></div>
+                    <div class="form-group"><label>Disciplina:</label><input type="text" id="turma-disciplina" required></div>
+                    <div class="form-group"><label>Ano Letivo:</label><input type="text" id="turma-ano" required></div>
+                    <div class="form-group"><label>Co-professores:</label><input type="text" id="turma-coprofs"></div>
+                    <div class="form-group"><label>Descrição:</label><textarea id="turma-desc" rows="3"></textarea></div>
+                    <button type="submit" class="btn-enviar">Gravar</button>
+                    <button type="button" id="btn-cancelar-turma" class="btn-cancelar">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </template>
+
     <template id="tpl-modal-conteudo">
         <div class="modal-overlay">
             <div class="login-card fade-in">
@@ -166,9 +183,9 @@
                 <form id="form-c">
                     <div class="form-group"><label>Título:</label><input type="text" id="at-t" required></div>
                     <div class="form-group"><label>Tipo:</label><select id="at-tp"><option value="link">PDF/Link</option><option value="video">Vídeo</option><option value="tarefa">Tarefa</option></select></div>
-                    <div class="form-group"><label>Link URL:</label><input type="url" id="at-u"></div>
+                    <div class="form-group"><label>URL:</label><input type="url" id="at-u"></div>
                     <div class="form-group"><label>Prazo Cronograma:</label><input type="date" id="at-d"></div>
-                    <button type="submit" class="btn-enviar">Gravar</button>
+                    <button type="submit" class="btn-enviar">Salvar</button>
                     <button type="button" id="btn-f-modal" class="btn-cancelar">Fechar</button>
                 </form>
             </div>
@@ -183,10 +200,7 @@
                     <div class="form-group"><label>Título:</label><input type="text" id="ag-t" required></div>
                     <div class="form-group"><label>Data:</label><input type="date" id="ag-d" required></div>
                     <div class="form-row" style="display:flex; gap:10px;"><input type="time" id="ag-h1" required> às <input type="time" id="ag-h2" required></div>
-                    <div class="form-group">
-                        <label>Para:</label>
-                        <select id="ag-sel-aluno"><option value="geral">Toda a Turma</option></select>
-                    </div>
+                    <div class="form-group"><label>Para:</label><select id="ag-sel-aluno"><option value="geral">Toda a Turma</option></select></div>
                     <button type="submit" class="btn-enviar">Agendar</button>
                     <button type="button" id="btn-f-agenda" class="btn-cancelar">Cancelar</button>
                 </form>
@@ -198,7 +212,7 @@
         <div class="dashboard fade-in">
             <h2>🛡️ Monitor de IA</h2>
             <textarea id="tx-c" style="width:100%; height:120px; margin-top:15px; padding:10px;"></textarea>
-            <button id="btn-anls" class="btn-enviar">Verificar Conteúdo</button>
+            <button id="btn-anls" class="btn-enviar">Verificar</button>
             <div id="rs-c"></div>
         </div>
     </template>
