@@ -86,13 +86,12 @@
         </div>
     </template>
 
-    <!-- DASHBOARDS -->
+    
     <template id="tpl-dash-professor">
         <div class="dashboard fade-in">
             <div class="dash-header">
                 <h2 id="txt-n-prof"></h2>
                 <div class="dash-nav-btns">
-                    <button id="btn-m-cronograma-prof" class="btn-acao" style="background:var(--gold); color:black;">📅 Meu Cronograma</button>
                     <button id="btn-n-turma" class="btn-acao">+ Nova Turma</button>
                     <button id="btn-logout" class="btn-logout">Sair</button>
                 </div>
@@ -144,19 +143,6 @@
         </div>
     </template>
 
-    <template id="tpl-cronograma-pessoal">
-        <div class="dashboard fade-in" style="max-width: 1000px;">
-            <div class="dash-header"><h2>Gestão do Cronograma</h2><button id="btn-s-crono" class="btn-acao">Salvar</button></div>
-            <div class="cronograma-layout">
-                <div class="crono-sidebar">
-                    <div class="crono-box"><h4>Dias de estudos</h4><div class="dias-selecao" id="area-dias"></div></div>
-                    <div class="crono-box"><h4>Horários</h4><input type="time" id="c-inicio"> às <input type="time" id="c-fim"></div>
-                </div>
-                <div class="crono-main"><div class="crono-box" style="height:100%"><h4>Matérias</h4><textarea id="c-materias"></textarea></div></div>
-            </div>
-            <button id="btn-v-crono" class="btn-cancelar">Voltar</button>
-        </div>
-    </template>
 
     <!-- MODAIS -->
     <template id="tpl-modal-criar-turma">
@@ -208,14 +194,44 @@
         </div>
     </template>
 
-    <template id="tpl-compliance">
-        <div class="dashboard fade-in">
-            <h2>🛡️ Monitor de IA</h2>
-            <textarea id="tx-c" style="width:100%; height:120px; margin-top:15px; padding:10px;"></textarea>
-            <button id="btn-anls" class="btn-enviar">Verificar</button>
-            <div id="rs-c"></div>
-        </div>
-    </template>
+
+    <!-- Tela para digitar o e-mail de recuperação -->
+<template id="tpl-recuperar-senha">
+    <div class="login-card fade-in">
+        <h2>Recuperar Senha</h2>
+        <p style="text-align:center; font-size: 0.9rem; margin-bottom: 15px;">
+            Enviaremos um código para o seu e-mail.
+        </p>
+        <form id="form-recuperar-solicitar">
+            <div class="form-group">
+                <label>Seu E-mail cadastrado:</label>
+                <input type="email" id="r-email" required>
+            </div>
+            <button type="submit" class="btn-enviar">Enviar Código</button>
+        </form>
+        <p class="trocar-form"><a href="#" id="link-v-login-rec">Voltar ao Login</a></p>
+    </div>
+</template>
+
+<!-- Tela para digitar o PIN e a NOVA senha -->
+<template id="tpl-nova-senha">
+    <div class="login-card fade-in">
+        <h2>Nova Senha</h2>
+        <p id="msg-pin-rec" style="text-align:center; font-size: 0.8rem;"></p>
+        <form id="form-atualizar-senha">
+            <div class="form-group">
+                <label>PIN de 6 dígitos:</label>
+                <input type="text" id="r-pin" maxlength="6" style="text-align:center; font-size: 1.5rem;" required>
+            </div>
+            <div class="form-group">
+                <label>Nova Senha:</label>
+                <input type="password" id="r-nova-senha" required>
+            </div>
+            <button type="submit" class="btn-enviar">Redefinir Senha</button>
+        </form>
+    </div>
+</template>
+
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/SupaBaseClientes.js"></script>

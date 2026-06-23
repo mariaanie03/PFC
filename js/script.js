@@ -10,13 +10,10 @@ const SERVICE_ID = "service_6gq5cku";
 const TEMPLATE_ID = "template_ryqja5c";
 const BLACKLIST = ['porra', 'caralho', 'merda', 'puta', 'idiota', 'pqp', 'foder'];
 
-// PERSISTÊNCIA: Recupera usuário salvo no navegador
 let usuarioLogado = JSON.parse(localStorage.getItem('usuarioSessao')) || null;
 
-// Função para pegar o ID (ajustado para 'id' conforme o diagrama)
-const getID = (obj) => obj ? (obj.id || obj['eu ia']) : null;
+const getID = (obj) => obj ? obj.id : null;
 
-// Função Mestre para trocar de tela usando os Templates do HTML
 function carregarTela(templateId) {
     const template = document.getElementById(templateId);
     if (!template) return console.error("Template não encontrado:", templateId);
@@ -25,7 +22,6 @@ function carregarTela(templateId) {
     conteudoPrincipal.appendChild(clone);
 }
 
-// Inicialização automática
 document.addEventListener('DOMContentLoaded', () => {
     if (usuarioLogado) {
         renderizarDashboard();
@@ -36,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // =========================================================
-// 2. NAVEGAÇÃO PRINCIPAL (LOGIN / DASHBOARD)
+// 2. NAVEGAÇÃO E AUTENTICAÇÃO
 // =========================================================
 
 function renderizarDashboard() {
@@ -56,7 +52,7 @@ function mostrarLogin() {
     const linkRec = document.getElementById('link-recuperar');
 
     if (linkCad) linkCad.onclick = (e) => { e.preventDefault(); mostrarCadastro(); };
-    if (linkRec) linkRec.onclick = (e) => { e.preventDefault(); alert("Função em desenvolvimento."); };
+    if (linkRec) linkRec.onclick = (e) => { e.preventDefault(); mostrarTelaRecuperar(); };
 
     if (formLogin) {
         formLogin.onsubmit = async (e) => {
@@ -64,7 +60,6 @@ function mostrarLogin() {
             const emailDigitado = document.getElementById('l-email').value.toLowerCase().trim();
             const senhaDigitada = document.getElementById('l-senha').value;
 
-            // BUSCA NA TABELA 'usuarios' E COLUNA 'email' (AJUSTADO AO DIAGRAMA)
             const { data, error } = await _supabase
                 .from('usuarios')
                 .select('*')
@@ -72,11 +67,7 @@ function mostrarLogin() {
                 .eq('senha', senhaDigitada)
                 .maybeSingle();
 
-            if (error) {
-                console.error("Erro Supabase:", error.message);
-                alert("Erro ao conectar: " + error.message);
-                return;
-            }
+            if (error) return alert("Erro ao conectar: " + error.message);
 
             if (data) {
                 usuarioLogado = data;
@@ -129,7 +120,6 @@ function mostrarValidacaoPin(email, pinCorreto, nome, tipo, senha) {
         if (pinDigitado === pinCorreto) {
             const codProf = (tipo === 'professor') ? `PROF-${Math.floor(1000+Math.random()*9000)}` : null;
             
-            // INSERÇÃO USANDO 'email' E 'codigo_identificacao' (AJUSTADO AO DIAGRAMA)
             const { error } = await _supabase.from('usuarios').insert([{ 
                 nome: nome, 
                 email: email, 
@@ -151,6 +141,49 @@ function mostrarValidacaoPin(email, pinCorreto, nome, tipo, senha) {
     };
 }
 
+function mostrarTelaRecuperar() {
+    carregarTela('tpl-recuperar-senha');
+    const form = document.getElementById('form-recuperar-solicitar');
+    const linkVoltar = document.getElementById('link-v-login-rec');
+
+    if (linkVoltar) linkVoltar.onclick = (e) => { e.preventDefault(); mostrarLogin(); };
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('r-email').value.toLowerCase().trim();
+        const { data, error } = await _supabase.from('usuarios').select('nome, email').eq('email', email).maybeSingle();
+        if (error) return alert("Erro no banco.");
+        if (!data) return alert("E-mail não cadastrado.");
+
+        const pinRecuperacao = Math.floor(100000 + Math.random() * 900000).toString();
+        const enviado = await enviarEmailReal(data.nome, data.email, pinRecuperacao);
+        if (enviado) mostrarTelaDefinirNovaSenha(data.email, pinRecuperacao);
+    };
+}
+
+function mostrarTelaDefinirNovaSenha(email, pinCorreto) {
+    carregarTela('tpl-nova-senha');
+    document.getElementById('msg-pin-rec').innerText = `Código enviado para ${email}`;
+
+    const form = document.getElementById('form-atualizar-senha');
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const pinDigitado = document.getElementById('r-pin').value.trim();
+        const novaSenha = document.getElementById('r-nova-senha').value;
+
+        if (pinDigitado !== pinCorreto) return alert("PIN incorreto!");
+        if (novaSenha.length < 6) return alert("Senha muito curta (mínimo 6).");
+
+        const { error } = await _supabase.from('usuarios').update({ senha: novaSenha }).eq('email', email);
+        if (!error) {
+            alert("Senha alterada com sucesso!");
+            mostrarLogin();
+        } else {
+            alert("Erro ao atualizar: " + error.message);
+        }
+    };
+}
+
 // =========================================================
 // 3. MÓDULO DO PROFESSOR
 // =========================================================
@@ -159,7 +192,6 @@ async function renderizarProfessor() {
     carregarTela('tpl-dash-professor');
     document.getElementById('txt-n-prof').innerText = `Docente: ${usuarioLogado.nome}`;
     document.getElementById('btn-logout').onclick = fazerLogout;
-    document.getElementById('btn-m-cronograma-prof').onclick = renderizarCronogramaPessoal;
     document.getElementById('btn-n-turma').onclick = abrirModalCriarTurma;
 
     const { data: turmas } = await _supabase.from('turmas').select('*').eq('professor_id', getID(usuarioLogado));
@@ -211,7 +243,7 @@ async function carregarDadosGestao(turmaId) {
     const { data: alunos } = await _supabase.from('turma_alunos').select('usuarios(nome)').eq('turma_id', turmaId);
     document.getElementById('res-alunos').innerHTML = alunos?.map(a => `<div style="padding:4px; font-size:0.85rem; border-bottom:1px solid #eee;">${a.usuarios.nome}</div>`).join('') || "Vazio.";
 
-    const { data: agenda } = await _supabase.from('cronograma_professor').select('*').eq('turma_id', turmaId).order('dados', {ascending:true});
+    const { data: agenda } = await _supabase.from('cronograma_professor').select('*').eq('turma_id', turmaId).order('data', {ascending:true});
     const { data: ativ } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
 
     const renderItem = (item, type) => `
@@ -223,7 +255,7 @@ async function carregarDadosGestao(turmaId) {
             </div>
         </div>`;
 
-    document.getElementById('res-cronograma').innerHTML = agenda?.map(a => `<div class="item-cronograma" style="background:#fff9e6"><span>${a.dados} - ${a.titulo}</span><button onclick="excluirItem(${a.id}, 'ag', ${turmaId})">🗑️</button></div>`).join('') || "---";
+    document.getElementById('res-cronograma').innerHTML = agenda?.map(a => `<div class="item-cronograma" style="background:#fff9e6"><span>${a.data} - ${a.titulo}</span><button onclick="excluirItem(${a.id}, 'ag', ${turmaId})">🗑️</button></div>`).join('') || "---";
     document.getElementById('res-atividades').innerHTML = ativ?.filter(a => a.tipo === 'tarefa').map(a => renderItem(a, 'at')).join('') || "---";
     document.getElementById('res-materiais').innerHTML = ativ?.filter(a => a.tipo !== 'tarefa').map(a => renderItem(a, 'at')).join('') || "---";
 }
@@ -258,26 +290,8 @@ async function verMateriaisAluno(id, nome) {
     const { data: agenda } = await _supabase.from('cronograma_professor').select('*').eq('turma_id', id).or(`aluno_id.is.null,aluno_id.eq.${getID(usuarioLogado)}`);
     const { data: ativ } = await _supabase.from('atividades').select('*').eq('turma_id', id);
 
-    document.getElementById('l-ag-prof').innerHTML = agenda?.map(a => `<div class="item-cronograma"><strong>${a.dados}</strong>: ${a.titulo}</div>`).join('') || "Sem horários.";
+    document.getElementById('l-ag-prof').innerHTML = agenda?.map(a => `<div class="item-cronograma"><strong>${a.data}</strong>: ${a.titulo}</div>`).join('') || "Sem horários.";
     document.getElementById('l-mt-prof').innerHTML = ativ?.map(a => `<div class="item-cronograma"><strong>${a.titulo}</strong> ${a.url_midia ? `<a href="${a.url_midia}" target="_blank">Abrir</a>` : ''}</div>`).join('') || "Vazio.";
-}
-
-function renderizarCronogramaPessoal() {
-    carregarTela('tpl-cronograma-pessoal');
-    document.getElementById('btn-v-crono').onclick = renderizarDashboard;
-    document.getElementById('btn-s-crono').onclick = salvarCronograma;
-    
-    const area = document.getElementById('area-dias');
-    area.innerHTML = ['S','T','Q','Q','S','S','D'].map((d, i) => `<div><input type="checkbox" id="dia-${i}" class="dia-check"><label for="dia-${i}">${d}</label></div>`).join('');
-
-    _supabase.from('cronogramas').select('*').eq('aluno_id', getID(usuarioLogado)).maybeSingle().then(({data}) => {
-        if(data) {
-            document.getElementById('c-inicio').value = data.horario_inicio || "";
-            document.getElementById('c-fim').value = data.horario_fim || "";
-            document.getElementById('c-materias').value = data.materias || "";
-            data.dias?.split(',').forEach(d => { if(document.getElementById(`dia-${d}`)) document.getElementById(`dia-${d}`).checked = true; });
-        }
-    });
 }
 
 // =========================================================
@@ -310,13 +324,6 @@ function abrirModalEntrarTurma() {
     }
 }
 
-async function salvarCronograma() {
-    const dias = [];
-    document.querySelectorAll('.dia-check:checked').forEach(el => dias.push(el.id.split('-')[1]));
-    await _supabase.from('cronogramas').upsert({ aluno_id: getID(usuarioLogado), dias: dias.join(','), horario_inicio: document.getElementById('c-inicio').value, horario_fim: document.getElementById('c-fim').value, materias: document.getElementById('c-materias').value });
-    alert("Salvo!");
-}
-
 function abrirModalConteudo(turmaId, at = null) {
     document.body.appendChild(document.getElementById('tpl-modal-conteudo').content.cloneNode(true));
     const modal = document.querySelector('.modal-overlay');
@@ -340,7 +347,7 @@ async function abrirModalAgendar(turmaId) {
     document.getElementById('form-ag').onsubmit = async (e) => {
         e.preventDefault();
         const aId = document.getElementById('ag-sel-aluno').value;
-        await _supabase.from('cronograma_professor').insert([{ turma_id: turmaId, titulo: document.getElementById('ag-t').value, dados: document.getElementById('ag-d').value, 'hora_início': document.getElementById('ag-h1').value, hora_fim: document.getElementById('ag-h2').value, aluno_id: aId==='geral'?null:aId }]);
+        await _supabase.from('cronograma_professor').insert([{ turma_id: turmaId, titulo: document.getElementById('ag-t').value, data: document.getElementById('ag-d').value, hora_inicio: document.getElementById('ag-h1').value, hora_fim: document.getElementById('ag-h2').value, aluno_id: aId==='geral'?null:aId }]);
         modal.remove(); carregarDadosGestao(turmaId);
     };
     document.getElementById('btn-f-agenda').onclick = () => modal.remove();
@@ -348,14 +355,16 @@ async function abrirModalAgendar(turmaId) {
 
 const editarConteudo = (at) => abrirModalConteudo(at.turma_id, at);
 
-// Menu lateral
 btnHome.onclick = () => { carregarTela('tpl-home'); btnLoginMenu.textContent = usuarioLogado ? "Meu Painel" : "Login/Cadastro"; };
 btnLoginMenu.onclick = renderizarDashboard;
 btnCompliance.onclick = () => {
     carregarTela('tpl-compliance');
-    document.getElementById('btn-anls').onclick = () => {
-        const txt = document.getElementById('tx-c').value.toLowerCase();
-        const erro = BLACKLIST.some(p => txt.includes(p));
-        document.getElementById('rs-c').innerHTML = erro ? "<div class='alerta-perigo'>⚠️ Inadequado</div>" : "<div class='alerta-sucesso'>✅ Seguro</div>";
-    };
+    const btnAnls = document.getElementById('btn-anls');
+    if(btnAnls) {
+        btnAnls.onclick = () => {
+            const txt = document.getElementById('tx-c').value.toLowerCase();
+            const erro = BLACKLIST.some(p => txt.includes(p));
+            document.getElementById('rs-c').innerHTML = erro ? "<div style='color:red; margin-top:10px;'>⚠️ Inadequado</div>" : "<div style='color:green; margin-top:10px;'>✅ Seguro</div>";
+        };
+    }
 };
