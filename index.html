@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Educacional</title>
+    <title>Agenda.edu</title>
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="estilo.css/estilo.css">
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -13,7 +13,7 @@
 
     <header>
         <div class="logo-box"></div>
-        <h1>Nome do Site</h1>
+        <h1>Agenda.edu</h1>
     </header>
 
     <div class="container">
@@ -29,7 +29,6 @@
         <main id="conteudo-principal"></main>
     </div>
 
-    <footer><p>&copy; 2026 Portal Educacional. Todos os direitos reservados.</p></footer>
 
     <!-- TELAS -->
     <template id="tpl-home">
@@ -60,7 +59,8 @@
             <form id="form-cadastro">
                 <div class="form-group"><label>Nome Completo:</label><input type="text" id="c-nome" required></div>
                 <div class="form-group"><label>E-mail:</label><input type="email" id="c-email" required></div>
-                <div class="form-group"><label>Senha:</label><input type="password" id="c-senha" required></div>
+                <input type="password" id="c-senha" required 
+       title="A senha deve ter 8 caracteres, incluindo letras maiúsculas, minúsculas e números.">
                 <div class="form-group">
                     <label>Perfil:</label>
                     <select id="tipo-usuario">
@@ -111,6 +111,8 @@
             <div class="dash-header">
                 <h2 id="txt-n-prof"></h2>
                 <div class="dash-nav-btns">
+                <input type="text" id="busca-turma" placeholder="Buscar nome ou código..." 
+                       style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-right: 10px; width: 200px;">
                     <button id="btn-n-turma" class="btn-acao">+ Nova Turma</button>
                     <button id="btn-logout" class="btn-logout">Sair</button>
                 </div>
@@ -158,52 +160,66 @@
 
     <!-- MODAIS -->
     <template id="tpl-modal-conteudo">
-        <div class="modal-overlay">
-            <div class="login-card fade-in">
-                <h3 id="mod-c-titulo">Conteúdo</h3>
-                <form id="form-c">
-                    <div class="form-group"><label>Título:</label><input type="text" id="at-t" required></div>
-                    <div class="form-group"><label>Tipo:</label><select id="at-tp"></select></div>
-                    <div class="form-group"><label>Link/URL:</label><input type="url" id="at-u"></div>
-                    <div class="form-group" id="grp-prazo"><label>Prazo:</label><input type="date" id="at-d"></div>
-                    <button type="submit" class="btn-enviar">Salvar</button>
-                    <button type="button" id="btn-f-modal" class="btn-cancelar">Fechar</button>
-                </form>
-            </div>
+    <div class="modal-overlay">
+        <div class="login-card fade-in">
+            <!-- Adicionamos o ID que o JS procura abaixo -->
+            <h3 id="mod-c-titulo" style="text-align: center; margin-bottom: 15px;">Conteúdo</h3>
+            
+            <form id="form-c">
+                <div class="form-group"><label>Título:</label><input type="text" id="at-t" required></div>
+                
+                <div class="form-group">
+                    <label>Descrição:</label>
+                    <textarea id="at-desc" rows="3" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;"></textarea>
+                </div>
+
+                <div class="form-group"><label>Tipo:</label><select id="at-tp"></select></div>
+                <div class="form-group"><label>Link/URL:</label><input type="url" id="at-u"></div>
+                <div class="form-group" id="grp-prazo"><label>Prazo:</label><input type="date" id="at-d"></div>
+                
+                <button type="submit" class="btn-enviar">Salvar</button>
+                <button type="button" id="btn-f-modal" class="btn-cancelar">Fechar</button>
+            </form>
         </div>
-    </template>
+    </div>
+</template>
 
     <template id="tpl-modal-agendar">
-        <div class="modal-overlay">
-            <div class="login-card fade-in" style="max-width: 500px;">
-                <h3>📅 Agendar no Cronograma</h3>
-                <form id="form-ag">
-                    <div class="form-group"><label>Título:</label><input type="text" id="ag-t" required></div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div class="form-group"><label>Data Início:</label><input type="date" id="ag-d-ini" required></div>
-                        <div class="form-group"><label>Data Fim:</label><input type="date" id="ag-d-fim" required></div>
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div class="form-group"><label>Hora Início:</label><input type="time" id="ag-h1" required></div>
-                        <div class="form-group"><label>Hora Fim:</label><input type="time" id="ag-h2" required></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>🔗 Vincular à Atividade:</label>
-                        <select id="ag-vinc-ativ"><option value="">Informativo</option></select>
-                    </div>
+    <div class="modal-overlay">
+        <div class="login-card fade-in" style="max-width: 500px;">
+            <h3>📅 Agendar no Cronograma</h3>
+            <form id="form-ag">
+                <div class="form-group"><label>Título:</label><input type="text" id="ag-t" required></div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="form-group"><label>Data Início:</label><input type="date" id="ag-d-ini" required></div>
+                    <div class="form-group"><label>Data Fim:</label><input type="date" id="ag-d-fim" required></div>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="form-group"><label>Hora Início:</label><input type="time" id="ag-h1" required></div>
+                    <div class="form-group"><label>Hora Fim:</label><input type="time" id="ag-h2" required></div>
+                </div>
 
-                    <div class="form-group">
-                        <label>👤 Para quem:</label>
-                        <select id="ag-sel-aluno"><option value="geral">Toda a Turma</option></select>
-                    </div>
+                <!-- O CAMPO DEVE ESTAR AQUI DENTRO -->
+                <div class="form-group">
+                    <label>🔗 Vincular à Atividade (opcional):</label>
+                    <select id="ag-vinc-ativ">
+                        <option value="">Nenhuma</option>
+                    </select>
+                </div>
 
-                    <button type="submit" class="btn-enviar">Gravar Agendamento</button>
-                    <button type="button" id="btn-f-agenda" class="btn-cancelar">Cancelar</button>
-                </form>
-            </div>
+                <div class="form-group">
+                    <label>👤 Para quem:</label>
+                    <select id="ag-sel-aluno"><option value="geral">Toda a Turma</option></select>
+                </div>
+
+                <button type="submit" class="btn-enviar">Gravar Agendamento</button>
+                <button type="button" id="btn-f-agenda" class="btn-cancelar">Cancelar</button>
+            </form>
         </div>
-    </template>
+    </div>
+</template>
 
     <template id="tpl-modal-criar-turma">
         <div class="modal-overlay">
@@ -217,6 +233,9 @@
             </div>
         </div>
     </template>
+
+
+     <footer><p>&copy; Agenda.edu. Todos os direitos reservados.</p></footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/SupaBaseClientes.js"></script>

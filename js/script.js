@@ -80,18 +80,44 @@ function mostrarTelaDefinirNovaSenha(email, pinCorreto) {
 function mostrarCadastro() {
     carregarTela('tpl-cadastro');
     document.getElementById('link-v-login').onclick = (e) => { e.preventDefault(); mostrarLogin(); };
+    
     document.getElementById('form-cadastro').onsubmit = async (e) => {
         e.preventDefault();
         const nome = document.getElementById('c-nome').value;
         const email = document.getElementById('c-email').value.toLowerCase().trim();
         const tipo = document.getElementById('tipo-usuario').value;
         const senha = document.getElementById('c-senha').value;
-        if (tipo === 'professor' && !email.includes('ifpr.edu.br')) return alert("Use @ifpr.edu.br");
+
+        // --- VALIDAÇÃO DE SENHA FORTE ---
+        const regexSenha = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        
+        /* Explicação da Regex:
+           ^                : Início da linha
+           (?=.*[a-z])      : Deve conter pelo menos uma letra minúscula
+           (?=.*[A-Z])      : Deve conter pelo menos uma letra maiúscula
+           (?=.*\d)         : Deve conter pelo menos um número
+           .{8,}            : Deve ter no mínimo 8 caracteres
+           $                : Fim da linha
+        */
+
+        if (!regexSenha.test(senha)) {
+            alert("A senha deve conter no mínimo:\n- 8 caracteres\n- Uma letra maiúscula\n- Uma letra minúscula\n- Um número");
+            return; // Interrompe a execução aqui
+        }
+        // --------------------------------
+
+        if (tipo === 'professor' && !email.includes('ifpr.edu.br')) {
+            return alert("Use @ifpr.edu.br");
+        }
+
         const pin = Math.floor(100000 + Math.random() * 900000).toString();
         try {
+            // Se passou na validação da senha, envia o e-mail
             await emailjs.send(SERVICE_ID, TEMPLATE_ID, { nome, pin, email_to: email });
             mostrarValidacaoPin(email, pin, nome, tipo, senha);
-        } catch (e) { alert("Erro e-mail."); }
+        } catch (e) { 
+            alert("Erro ao enviar e-mail de confirmação."); 
+        }
     };
 }
 
@@ -114,16 +140,38 @@ async function renderizarProfessor() {
     document.getElementById('btn-logout').onclick = () => { localStorage.removeItem('usuarioSessao'); location.reload(); };
     document.getElementById('btn-n-turma').onclick = abrirModalCriarTurma;
 
-    const { data: turmas } = await _supabase.from('turmas').select('*').eq('professor_id', getID(usuarioLogado));
     const container = document.getElementById('lista-turmas');
-    if (turmas) {
-        container.innerHTML = turmas.map(t => `
+    const inputBusca = document.getElementById('busca-turma');
+
+    // 1. Buscar todas as turmas do professor do banco de dados
+    const { data: turmas } = await _supabase.from('turmas').select('*').eq('professor_id', getID(usuarioLogado));
+
+    // 2. Função interna para desenhar os cards na tela
+    const desenharTurmas = (listaFiltrada) => {
+        if (!listaFiltrada || listaFiltrada.length === 0) {
+            container.innerHTML = "<p style='grid-column: 1/-1; text-align:center;'>Nenhuma turma encontrada.</p>";
+            return;
+        }
+        container.innerHTML = listaFiltrada.map(t => `
             <div class="card-item">
                 <h3>${t.nome}</h3>
                 <span class="info-tag">Código: ${t.codigo_convite}</span>
                 <button onclick="gerenciarTurma(${t.id}, '${t.nome}')" class="btn-pequeno">Gerenciar</button>
             </div>`).join('');
-    }
+    };
+
+    // 3. Renderização inicial (mostra tudo)
+    desenharTurmas(turmas);
+
+    // 4. Evento de busca (Filtro em tempo real)
+    inputBusca.oninput = () => {
+        const termo = inputBusca.value.toLowerCase().trim();
+        const filtradas = turmas.filter(t => 
+            t.nome.toLowerCase().includes(termo) || 
+            t.codigo_convite.toLowerCase().includes(termo)
+        );
+        desenharTurmas(filtradas);
+    };
 }
 
 function abrirModalCriarTurma() {
@@ -151,28 +199,79 @@ async function gerenciarTurma(turmaId, nomeTurma) {
 async function carregarDadosGestao(turmaId) {
     const { data: al } = await _supabase.from('turma_alunos').select('aluno_id, usuarios(nome)').eq('turma_id', turmaId);
     document.getElementById('res-alunos').innerHTML = al?.map(a => `<div style="padding:6px; border-bottom:1px solid #eee; font-size:0.8rem;">👤 ${a.usuarios.nome}</div>`).join('') || "Vazio";
-    const { data: ag } = await _supabase.from('cronograma_professor').select('*').eq('turma_id', turmaId).order('data', {ascending:true});
+    const { data: ag } = await _supabase.from('cronograma').select('*').eq('turma_id', turmaId).order('data', {ascending:true});
     const { data: it } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
-    document.getElementById('res-cronograma').innerHTML = ag?.map(a => `<div class="item-cronograma"><span>${a.data} - ${a.titulo}</span><button onclick="excluirItem(${a.id}, 'ag', ${turmaId})">🗑️</button></div>`).join('') || "---";
+    document.getElementById('res-cronograma').innerHTML = ag?.map(a => `<div class="item-cronograma"><span>${a.dados} - ${a.titulo}</span><button onclick="excluirItem(${a.id}, 'ag', ${turmaId})">🗑️</button></div>`).join('') || "---";
     const render = (i) => `<div class="item-cronograma"><span>${i.titulo}</span><div><button onclick='editarItem(${JSON.stringify(i)})'>✏️</button><button onclick="excluirItem(${i.id}, 'at', ${turmaId})">🗑️</button></div></div>`;
     document.getElementById('res-atividades').innerHTML = it?.filter(x => x.tipo === 'tarefa').map(render).join('') || "---";
     document.getElementById('res-materiais').innerHTML = it?.filter(x => x.tipo !== 'tarefa').map(render).join('') || "---";
 }
 
 function abrirModalConteudo(turmaId, modo, item = null) {
-    document.body.appendChild(document.getElementById('tpl-modal-conteudo').content.cloneNode(true));
+    // 1. Cria o clone do template
+    const clone = document.getElementById('tpl-modal-conteudo').content.cloneNode(true);
+    
+    // 2. Adiciona o clone ao corpo da página antes de tentar pegar os elementos
+    document.body.appendChild(clone);
+
+    // 3. Agora que ele está na página, selecionamos o Modal e o Botão
     const modal = document.querySelector('.modal-overlay');
-    const sel = document.getElementById('at-tp');
-    if(modo==='atividade') { sel.innerHTML=`<option value="tarefa">Tarefa</option>`; document.getElementById('grp-prazo').style.display="block"; }
-    else { sel.innerHTML=`<option value="link">Link</option><option value="video">Vídeo</option><option value="pdf">PDF</option>`; document.getElementById('grp-prazo').style.display="none"; }
-    if(item){ document.getElementById('at-t').value=item.titulo; document.getElementById('at-u').value=item.url_midia||""; sel.value=item.tipo; }
-    document.getElementById('form-c').onsubmit = async (e) => {
-        e.preventDefault();
-        const p = { turma_id: turmaId, titulo: document.getElementById('at-t').value, tipo: sel.value, url_midia: document.getElementById('at-u').value, data_entrega: document.getElementById('at-d').value || null };
-        item ? await _supabase.from('atividades').update(p).eq('id', item.id) : await _supabase.from('atividades').insert([p]);
-        modal.remove(); carregarDadosGestao(turmaId);
+    const btnFechar = modal.querySelector('#btn-f-modal'); // Buscamos o botão DENTRO do modal
+    const formulario = modal.querySelector('#form-c');
+    const sel = modal.querySelector('#at-tp');
+    const tituloModal = modal.querySelector('#mod-c-titulo');
+
+    // Configuração de modo (Atividade ou Material)
+    if(modo === 'atividade') { 
+        tituloModal.innerText = "Nova Atividade";
+        sel.innerHTML = `<option value="tarefa">Tarefa</option>`; 
+        modal.querySelector('#grp-prazo').style.display = "block"; 
+    } else { 
+        tituloModal.innerText = "Novo Material";
+        sel.innerHTML = `<option value="link">Link</option><option value="video">Vídeo</option><option value="pdf">PDF</option>`; 
+        modal.querySelector('#grp-prazo').style.display = "none"; 
+    }
+
+    // Se estiver EDITANDO, preenche os campos
+    if(item) { 
+        tituloModal.innerText = "Editar Item";
+        modal.querySelector('#at-t').value = item.titulo; 
+        modal.querySelector('#at-desc').value = item.descricao || ""; 
+        modal.querySelector('#at-u').value = item.url_midia || ""; 
+        sel.value = item.tipo; 
+        if(item.data_entrega) modal.querySelector('#at-d').value = item.data_entrega;
+    }
+
+    // --- LÓGICA DO BOTÃO FECHAR ---
+    btnFechar.onclick = () => {
+        modal.remove();
     };
-    document.getElementById('btn-f-modal').onclick = () => modal.remove();
+
+    // Lógica do Enviar (Salvar)
+    formulario.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const p = { 
+            turma_id: turmaId, 
+            titulo: modal.querySelector('#at-t').value, 
+            descricao: modal.querySelector('#at-desc').value,
+            tipo: sel.value, 
+            url_midia: modal.querySelector('#at-u').value, 
+            data_entrega: modal.querySelector('#at-d').value || null 
+        };
+
+        const idKey = item && item.id ? 'id' : 'eu ia'; // Verifica qual nome de ID o banco usa
+        const idValue = item ? (item.id || item['eu ia']) : null;
+
+        if(item) {
+            await _supabase.from('atividades').update(p).eq(idKey, idValue);
+        } else {
+            await _supabase.from('atividades').insert([p]);
+        }
+
+        modal.remove(); 
+        carregarDadosGestao(turmaId);
+    };
 }
 
 function editarItem(item) { abrirModalConteudo(item.turma_id, item.tipo==='tarefa'?'atividade':'material', item); }
@@ -183,27 +282,49 @@ function editarItem(item) { abrirModalConteudo(item.turma_id, item.tipo==='taref
 async function abrirModalAgendar(turmaId) {
     const clone = document.getElementById('tpl-modal-agendar').content.cloneNode(true);
     
-    // 1. Carregar Atividades para vínculo
-    const { data: at } = await _supabase.from('atividades').select('id, titulo').eq('turma_id', turmaId);
-    const selVinc = clone.querySelector('#ag-vinc-ativ');
-    at?.forEach(a => { const o = document.createElement('option'); o.value=a.id; o.textContent=a.titulo; selVinc.appendChild(o); });
-
-    // 2. Carregar Alunos da Turma para o seletor de destino
+    // 1. Carregar Alunos
     const { data: alunos } = await _supabase.from('turma_alunos').select('aluno_id, usuarios(nome)').eq('turma_id', turmaId);
     const selAlunos = clone.querySelector('#ag-sel-aluno');
-    alunos?.forEach(a => {
-        const o = document.createElement('option');
-        o.value = a.aluno_id;
-        o.textContent = `Apenas para: ${a.usuarios.nome}`;
-        selAlunos.appendChild(o);
-    });
+    if (alunos) {
+        alunos.forEach(a => {
+            const o = document.createElement('option');
+            o.value = a.aluno_id;
+            o.textContent = `Apenas para: ${a.usuarios.nome}`;
+            selAlunos.appendChild(o);
+        });
+    }
+
+    // 2. Carregar Atividades (Atenção aqui!)
+    const { data: atividades, error: errAtiv } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
+    const selAtividades = clone.querySelector('#ag-vinc-ativ');
+
+    console.log("Atividades encontradas para esta turma:", atividades);
+
+    if (errAtiv) console.error("Erro ao buscar atividades:", errAtiv);
+
+    if (atividades && selAtividades) {
+        atividades.forEach(ativ => {
+            const o = document.createElement('option');
+            // Usamos ativ['eu ia'] porque é o nome da coluna de ID no seu diagrama
+            o.value = ativ['eu ia'] || ativ.id; 
+            o.textContent = ativ.titulo;
+            selAtividades.appendChild(o);
+        });
+    } else {
+        console.warn("Seletor ag-vinc-ativ não encontrado no clone ou lista vazia.");
+    }
 
     document.body.appendChild(clone);
+    
     const modal = document.querySelector('.modal-overlay');
+    const formulario = document.getElementById('form-ag');
 
-    document.getElementById('form-ag').onsubmit = async (e) => {
+    formulario.onsubmit = async (e) => {
         e.preventDefault();
+        
         const destino = document.getElementById('ag-sel-aluno').value;
+        const atividadeId = document.getElementById('ag-vinc-ativ').value;
+
         const payload = { 
             turma_id: turmaId, 
             titulo: document.getElementById('ag-t').value, 
@@ -211,12 +332,21 @@ async function abrirModalAgendar(turmaId) {
             data_fim: document.getElementById('ag-d-fim').value, 
             hora_inicio: document.getElementById('ag-h1').value, 
             hora_fim: document.getElementById('ag-h2').value, 
-            atividade_vinculada_id: document.getElementById('ag-vinc-ativ').value || null,
-            aluno_id: destino === 'geral' ? null : destino
+            aluno_id: destino === 'geral' ? null : destino,
+            atividade_vinculada_id: atividadeId === "" ? null : atividadeId 
         };
-        await _supabase.from('cronograma_professor').insert([payload]);
-        modal.remove(); carregarDadosGestao(turmaId);
+
+        const { error } = await _supabase.from('cronograma').insert([payload]);
+        
+        if (error) {
+            alert("Erro ao gravar: " + error.message);
+        } else {
+            alert("Agendamento gravado!");
+            modal.remove(); 
+            carregarDadosGestao(turmaId);
+        }
     };
+
     document.getElementById('btn-f-agenda').onclick = () => modal.remove();
 }
 
@@ -250,7 +380,7 @@ async function verMateriaisAluno(id, nome) {
     document.getElementById('btn-v-est').onclick = renderizarAluno;
     
     // Aluno vê itens "gerais" (null) ou específicos dele
-    const { data: ag } = await _supabase.from('cronograma_professor').select('*').eq('turma_id', id).or(`aluno_id.is.null,aluno_id.eq.${getID(usuarioLogado)}`);
+    const { data: ag } = await _supabase.from('cronograma').select('*').eq('turma_id', id).or(`aluno_id.is.null,aluno_id.eq.${getID(usuarioLogado)}`);
     const { data: it } = await _supabase.from('atividades').select('*').eq('turma_id', id);
     
     document.getElementById('l-ag-prof').innerHTML = ag?.map(a => `<div class="item-cronograma"><strong>${a.data}</strong>: ${a.titulo}</div>`).join('') || "Vazio";
@@ -259,7 +389,7 @@ async function verMateriaisAluno(id, nome) {
 
 async function excluirItem(id, tipo, tId) {
     if(!confirm("Excluir?")) return;
-    await _supabase.from(tipo==='ag'?'cronograma_professor':'atividades').delete().eq('id', id);
+    await _supabase.from(tipo==='ag'?'cronograma':'atividades').delete().eq('id', id);
     carregarDadosGestao(tId);
 }
 
