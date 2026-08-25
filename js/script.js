@@ -282,40 +282,31 @@ function editarItem(item) { abrirModalConteudo(item.turma_id, item.tipo==='taref
 async function abrirModalAgendar(turmaId) {
     const clone = document.getElementById('tpl-modal-agendar').content.cloneNode(true);
     
-    // 1. Carregar Alunos
+    // 1. Carregar Alunos para o Select
     const { data: alunos } = await _supabase.from('turma_alunos').select('aluno_id, usuarios(nome)').eq('turma_id', turmaId);
     const selAlunos = clone.querySelector('#ag-sel-aluno');
     if (alunos) {
         alunos.forEach(a => {
             const o = document.createElement('option');
             o.value = a.aluno_id;
-            o.textContent = `Apenas para: ${a.usuarios.nome}`;
+            o.textContent = `Individual: ${a.usuarios.nome}`;
             selAlunos.appendChild(o);
         });
     }
 
-    // 2. Carregar Atividades (Atenção aqui!)
-    const { data: atividades, error: errAtiv } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
+    // 2. Carregar Atividades existentes para vincular
+    const { data: atividades } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
     const selAtividades = clone.querySelector('#ag-vinc-ativ');
-
-    console.log("Atividades encontradas para esta turma:", atividades);
-
-    if (errAtiv) console.error("Erro ao buscar atividades:", errAtiv);
-
     if (atividades && selAtividades) {
         atividades.forEach(ativ => {
             const o = document.createElement('option');
-            // Usamos ativ['eu ia'] porque é o nome da coluna de ID no seu diagrama
             o.value = ativ['eu ia'] || ativ.id; 
             o.textContent = ativ.titulo;
             selAtividades.appendChild(o);
         });
-    } else {
-        console.warn("Seletor ag-vinc-ativ não encontrado no clone ou lista vazia.");
     }
 
     document.body.appendChild(clone);
-    
     const modal = document.querySelector('.modal-overlay');
     const formulario = document.getElementById('form-ag');
 
@@ -333,7 +324,11 @@ async function abrirModalAgendar(turmaId) {
             hora_inicio: document.getElementById('ag-h1').value, 
             hora_fim: document.getElementById('ag-h2').value, 
             aluno_id: destino === 'geral' ? null : destino,
-            atividade_vinculada_id: atividadeId === "" ? null : atividadeId 
+            atividade_vinculada_id: atividadeId === "" ? null : atividadeId,
+            // NOVOS CAMPOS ABAIXO:
+            conteudo_estudo: document.getElementById('ag-conteudo').value,
+            link_material: document.getElementById('ag-link').value,
+            atividades_descricao: document.getElementById('ag-ativ-desc').value
         };
 
         const { error } = await _supabase.from('cronograma').insert([payload]);
@@ -341,7 +336,7 @@ async function abrirModalAgendar(turmaId) {
         if (error) {
             alert("Erro ao gravar: " + error.message);
         } else {
-            alert("Agendamento gravado!");
+            alert("Agendamento finalizado com sucesso!");
             modal.remove(); 
             carregarDadosGestao(turmaId);
         }
@@ -349,7 +344,6 @@ async function abrirModalAgendar(turmaId) {
 
     document.getElementById('btn-f-agenda').onclick = () => modal.remove();
 }
-
 // =========================================================
 // 4. MÓDULO ALUNO
 // =========================================================

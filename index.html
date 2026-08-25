@@ -59,7 +59,7 @@
             <form id="form-cadastro">
                 <div class="form-group"><label>Nome Completo:</label><input type="text" id="c-nome" required></div>
                 <div class="form-group"><label>E-mail:</label><input type="email" id="c-email" required></div>
-                <input type="password" id="c-senha" required 
+                <div class="form-group"><label>Senha:</label><input type="password" id="c-senha" required 
        title="A senha deve ter 8 caracteres, incluindo letras maiúsculas, minúsculas e números.">
                 <div class="form-group">
                     <label>Perfil:</label>
@@ -184,42 +184,61 @@
     </div>
 </template>
 
-    <template id="tpl-modal-agendar">
+   <template id="tpl-modal-agendar">
     <div class="modal-overlay">
-        <div class="login-card fade-in" style="max-width: 500px;">
-            <h3>📅 Agendar no Cronograma</h3>
+        <div class="login-card fade-in" style="max-width: 550px; border-radius: 30px;">
+            <h3 style="text-align: center; margin-bottom: 20px; color: var(--dark-green);">Agenda Cronograma</h3>
             <form id="form-ag">
-                <div class="form-group"><label>Título:</label><input type="text" id="ag-t" required></div>
+                <!-- Título -->
+                <div class="form-group">
+                    <label>Título:</label>
+                    <input type="text" id="ag-t" required placeholder="Ex: Aula de História">
+                </div>
                 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <!-- Datas e Horas (Lado a lado) -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                     <div class="form-group"><label>Data Início:</label><input type="date" id="ag-d-ini" required></div>
                     <div class="form-group"><label>Data Fim:</label><input type="date" id="ag-d-fim" required></div>
                 </div>
                 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                     <div class="form-group"><label>Hora Início:</label><input type="time" id="ag-h1" required></div>
                     <div class="form-group"><label>Hora Fim:</label><input type="time" id="ag-h2" required></div>
                 </div>
 
-                <!-- O CAMPO DEVE ESTAR AQUI DENTRO -->
-                <div class="form-group">
-                    <label>🔗 Vincular à Atividade (opcional):</label>
+                <!-- Conteúdo a Estudar -->
+                <div class="form-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
+                    <label>📖 Conteúdo a estudar:</label>
+                    <textarea id="ag-conteudo" rows="2" placeholder="Descrição dos conteúdos..." style="width:100%; border: 1px solid #eee; margin-bottom: 8px;"></textarea>
+                    <input type="url" id="ag-link" placeholder="Link/URL de apoio (PDF, Site, etc)">
+                </div>
+
+                <!-- Atividades -->
+                <div class="form-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
+                    <label>📝 Atividades:</label>
+                    <textarea id="ag-ativ-desc" rows="2" placeholder="Descrição das atividades a serem desenvolvidas..."></textarea>
+                    
+                    <label style="font-size: 0.75rem; margin-top: 5px;">Vincular à Atividade do Sistema (opcional):</label>
                     <select id="ag-vinc-ativ">
                         <option value="">Nenhuma</option>
                     </select>
                 </div>
 
+                <!-- Para quem -->
                 <div class="form-group">
                     <label>👤 Para quem:</label>
-                    <select id="ag-sel-aluno"><option value="geral">Toda a Turma</option></select>
+                    <select id="ag-sel-aluno">
+                        <option value="geral">Geral (Toda a Turma)</option>
+                    </select>
                 </div>
 
-                <button type="submit" class="btn-enviar">Gravar Agendamento</button>
+                <button type="submit" class="btn-enviar">Finalizar</button>
                 <button type="button" id="btn-f-agenda" class="btn-cancelar">Cancelar</button>
             </form>
         </div>
     </div>
 </template>
+
 
     <template id="tpl-modal-criar-turma">
         <div class="modal-overlay">
