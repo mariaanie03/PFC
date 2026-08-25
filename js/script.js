@@ -8,7 +8,7 @@ const btnLoginMenu = document.getElementById('btn-login');
 let usuarioLogado = JSON.parse(localStorage.getItem('usuarioSessao')) || null;
 const getID = (obj) => obj ? obj.id : null;
 
-const SERVICE_ID = "service_6gq5cku";
+const SERVICE_ID = "service_gvptgt4";
 const TEMPLATE_ID = "template_ryqja5c";
 
 function carregarTela(templateId) {
@@ -91,14 +91,6 @@ function mostrarCadastro() {
         // --- VALIDAÇÃO DE SENHA FORTE ---
         const regexSenha = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
         
-        /* Explicação da Regex:
-           ^                : Início da linha
-           (?=.*[a-z])      : Deve conter pelo menos uma letra minúscula
-           (?=.*[A-Z])      : Deve conter pelo menos uma letra maiúscula
-           (?=.*\d)         : Deve conter pelo menos um número
-           .{8,}            : Deve ter no mínimo 8 caracteres
-           $                : Fim da linha
-        */
 
         if (!regexSenha.test(senha)) {
             alert("A senha deve conter no mínimo:\n- 8 caracteres\n- Uma letra maiúscula\n- Uma letra minúscula\n- Um número");
