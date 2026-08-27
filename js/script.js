@@ -189,14 +189,85 @@ async function gerenciarTurma(turmaId, nomeTurma) {
 }
 
 async function carregarDadosGestao(turmaId) {
+    // 1. Busca os alunos
     const { data: al } = await _supabase.from('turma_alunos').select('aluno_id, usuarios(nome)').eq('turma_id', turmaId);
-    document.getElementById('res-alunos').innerHTML = al?.map(a => `<div style="padding:6px; border-bottom:1px solid #eee; font-size:0.8rem;">👤 ${a.usuarios.nome}</div>`).join('') || "Vazio";
+    
+    const containerAlunos = document.getElementById('res-alunos');
+    if (containerAlunos) {
+        containerAlunos.innerHTML = al?.map(a => `<div style="padding:6px; border-bottom:1px solid #eee; font-size:0.8rem;">👤 ${a.usuarios.nome}</div>`).join('') || "Vazio";
+    }
+
+    // --- NOVA LÓGICA DE CORES POR ÍNDICE (À PROVA DE ERROS) ---
+    const corGeral = "#6a8239"; 
+    const paletaCores = [
+        '#2196f3', // Azul
+        '#9c27b0', // Roxo
+        '#ff9800', // Laranja
+        '#e91e63', // Rosa
+        '#00bcd4', // Ciano
+        '#f44336', // Vermelho
+        '#673ab7', // Indigo
+        '#3f51b5', // Azul Escuro
+        '#009688'  // Teal
+    ];
+
+    const nomesMap = {};
+    const coresPorAluno = {};
+
+    // Aqui garantimos que cada aluno da lista receba uma cor diferente da paleta
+    al?.forEach((aluno, index) => {
+        nomesMap[aluno.aluno_id] = aluno.usuarios.nome;
+        // O primeiro aluno pega a cor 0, o segundo a cor 1...
+        coresPorAluno[aluno.aluno_id] = paletaCores[index % paletaCores.length];
+    });
+
+    // 2. Busca Cronograma e Atividades
     const { data: ag } = await _supabase.from('cronograma').select('*').eq('turma_id', turmaId).order('data', {ascending:true});
     const { data: it } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
-    document.getElementById('res-cronograma').innerHTML = ag?.map(a => `<div class="item-cronograma"><span>${a.dados} - ${a.titulo}</span><button onclick="excluirItem(${a.id}, 'ag', ${turmaId})">🗑️</button></div>`).join('') || "---";
-    const render = (i) => `<div class="item-cronograma"><span>${i.titulo}</span><div><button onclick='editarItem(${JSON.stringify(i)})'>✏️</button><button onclick="excluirItem(${i.id}, 'at', ${turmaId})">🗑️</button></div></div>`;
-    document.getElementById('res-atividades').innerHTML = it?.filter(x => x.tipo === 'tarefa').map(render).join('') || "---";
-    document.getElementById('res-materiais').innerHTML = it?.filter(x => x.tipo !== 'tarefa').map(render).join('') || "---";
+
+    // 3. Renderiza o Cronograma
+    const containerCronograma = document.getElementById('res-cronograma');
+    if (containerCronograma) {
+        containerCronograma.innerHTML = ag?.map(a => {
+            // Se tiver aluno_id, pega a cor dele no mapa, senão usa a cor geral
+            const corFinal = a.aluno_id ? coresPorAluno[a.aluno_id] : corGeral;
+            const labelDestino = a.aluno_id ? `👤 ${nomesMap[a.aluno_id] || 'Aluno'}` : "👥 Geral";
+
+            return `
+                <div class="item-cronograma" style="display:flex; flex-direction:column; align-items:flex-start; gap:5px; padding:12px; border-left: 8px solid ${corFinal}; margin-bottom:10px; background:#fff; border-radius:8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.7rem; font-weight:bold; color:white; background:${corFinal}; padding:3px 10px; border-radius:20px; text-transform: uppercase;">
+                            ${labelDestino}
+                        </span>
+                        <div style="display:flex; gap:8px;">
+                            <button onclick='editarAgendamento(${JSON.stringify(a)})' style="border:none; background:none; cursor:pointer; font-size:1.1rem;">✏️</button>
+                            <button onclick="excluirItem(${a.id}, 'ag', ${turmaId})" style="border:none; background:none; cursor:pointer; font-size:1.1rem;">🗑️</button>
+                        </div>
+                    </div>
+                    <strong style="font-size:1rem; color:#222; margin-top:5px;">${a.titulo}</strong>
+                    <div style="display:flex; gap:12px; font-size:0.8rem; color:#555; margin-top:3px;">
+                        <span>📅 ${a.data || '---'}</span>
+                        <span>⏰ ${a.hora_inicio || '--:--'}</span>
+                    </div>
+                </div>`;
+        }).join('') || "Nenhum agendamento.";
+    }
+
+    // 4. Renderiza Atividades e Materiais
+    const renderPadrao = (i) => `
+        <div class="item-cronograma">
+            <span>${i.titulo}</span>
+            <div style="display:flex; gap:5px;">
+                <button onclick='editarItem(${JSON.stringify(i)})' style="border:none; background:none; cursor:pointer;">✏️</button>
+                <button onclick="excluirItem(${i.id || i['eu ia']}, 'at', ${turmaId})" style="border:none; background:none; cursor:pointer;">🗑️</button>
+            </div>
+        </div>`;
+
+    const containerAtiv = document.getElementById('res-atividades');
+    if (containerAtiv) containerAtiv.innerHTML = it?.filter(x => x.tipo === 'tarefa').map(renderPadrao).join('') || "---";
+
+    const containerMat = document.getElementById('res-materiais');
+    if (containerMat) containerMat.innerHTML = it?.filter(x => x.tipo !== 'tarefa').map(renderPadrao).join('') || "---";
 }
 
 function abrirModalConteudo(turmaId, modo, item = null) {
@@ -271,7 +342,7 @@ function editarItem(item) { abrirModalConteudo(item.turma_id, item.tipo==='taref
 // =========================================================
 // AGENDAR (ROBUSTO COM SELEÇÃO DE ALUNO)
 // =========================================================
-async function abrirModalAgendar(turmaId) {
+async function abrirModalAgendar(turmaId, item = null) {
     const clone = document.getElementById('tpl-modal-agendar').content.cloneNode(true);
     
     // 1. Carregar Alunos para o Select
@@ -286,13 +357,13 @@ async function abrirModalAgendar(turmaId) {
         });
     }
 
-    // 2. Carregar Atividades existentes para vincular
+    // 2. Carregar Atividades para vincular
     const { data: atividades } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
     const selAtividades = clone.querySelector('#ag-vinc-ativ');
     if (atividades && selAtividades) {
         atividades.forEach(ativ => {
             const o = document.createElement('option');
-            o.value = ativ['eu ia'] || ativ.id; 
+            o.value = ativ.id || ativ['eu ia']; 
             o.textContent = ativ.titulo;
             selAtividades.appendChild(o);
         });
@@ -301,6 +372,22 @@ async function abrirModalAgendar(turmaId) {
     document.body.appendChild(clone);
     const modal = document.querySelector('.modal-overlay');
     const formulario = document.getElementById('form-ag');
+    const tituloModal = modal.querySelector('h3');
+
+    // --- LOGICA DE PREENCHIMENTO PARA EDIÇÃO ---
+    if (item) {
+        tituloModal.innerText = "Editar Cronograma";
+        document.getElementById('ag-t').value = item.titulo || "";
+        document.getElementById('ag-d-ini').value = item.data || "";
+        document.getElementById('ag-d-fim').value = item.data_fim || "";
+        document.getElementById('ag-h1').value = item.hora_inicio || "";
+        document.getElementById('ag-h2').value = item.hora_fim || "";
+        document.getElementById('ag-conteudo').value = item.conteudo_estudo || "";
+        document.getElementById('ag-link').value = item.link_material || "";
+        document.getElementById('ag-ativ-desc').value = item.atividades_descricao || "";
+        document.getElementById('ag-sel-aluno').value = item.aluno_id || "geral";
+        document.getElementById('ag-vinc-ativ').value = item.atividade_vinculada_id || "";
+    }
 
     formulario.onsubmit = async (e) => {
         e.preventDefault();
@@ -317,24 +404,37 @@ async function abrirModalAgendar(turmaId) {
             hora_fim: document.getElementById('ag-h2').value, 
             aluno_id: destino === 'geral' ? null : destino,
             atividade_vinculada_id: atividadeId === "" ? null : atividadeId,
-            // NOVOS CAMPOS ABAIXO:
             conteudo_estudo: document.getElementById('ag-conteudo').value,
             link_material: document.getElementById('ag-link').value,
             atividades_descricao: document.getElementById('ag-ativ-desc').value
         };
 
-        const { error } = await _supabase.from('cronograma').insert([payload]);
-        
-        if (error) {
-            alert("Erro ao gravar: " + error.message);
+        let erro;
+        if (item) {
+            // Se 'item' existe, estamos EDITANDO (UPDATE)
+            const { error } = await _supabase.from('cronograma').update(payload).eq('id', item.id);
+            erro = error;
         } else {
-            alert("Agendamento finalizado com sucesso!");
+            // Se 'item' é nulo, estamos CRIANDO (INSERT)
+            const { error } = await _supabase.from('cronograma').insert([payload]);
+            erro = error;
+        }
+        
+        if (erro) {
+            alert("Erro ao salvar: " + erro.message);
+        } else {
+            alert(item ? "Cronograma atualizado!" : "Agendamento finalizado!");
             modal.remove(); 
             carregarDadosGestao(turmaId);
         }
     };
 
     document.getElementById('btn-f-agenda').onclick = () => modal.remove();
+}
+// Esta função é chamada quando você clica no botão ✏️ do cronograma
+function editarAgendamento(item) {
+    // Ela apenas abre o modal passando o ID da turma e os dados do item
+    abrirModalAgendar(item.turma_id, item);
 }
 // =========================================================
 // 4. MÓDULO ALUNO
