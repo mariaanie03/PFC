@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda.edu</title>
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="estilo.css/estilo.css">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>emailjs.init("7YQE2NjP-M4abGZkv");</script>
+</head>
+<body>
+
+    <header>
+        <div class="logo-box"></div>
+        <h1>Agenda.edu</h1>
+    </header>
+
+    <div class="container">
+        <aside>
+            <h2>Menu</h2>
+            <nav>
+                <ul>
+                    <li><a href="#" id="btn-home">Home</a></li>
+                    <li><a href="#" id="btn-login">Login/Cadastro</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main id="conteudo-principal"></main>
+    </div>
+
+
+    <!-- TELAS -->
+    <template id="tpl-home">
+        <div class="fade-in">
+            <h2>Bem-vindo ao Portal</h2>
+            <p>Selecione uma opção no menu lateral para começar.</p>
+        </div>
+    </template>
+
+    <template id="tpl-login">
+        <div class="login-card fade-in">
+            <h2>Acessar Portal</h2>
+            <form id="form-login">
+                <div class="form-group"><label>E-mail:</label><input type="email" id="l-email" required></div>
+                <div class="form-group"><label>Senha:</label><input type="password" id="l-senha" required></div>
+                <button type="submit" class="btn-enviar">Entrar</button>
+            </form>
+            <p class="trocar-form">
+                <a href="#" id="link-cadastrar">Criar Conta</a> | 
+                <a href="#" id="link-recuperar">Esqueci a senha</a>
+            </p>
+        </div>
+    </template>
+
+    <template id="tpl-cadastro">
+        <div class="login-card fade-in">
+            <h2>Novo Cadastro</h2>
+            <form id="form-cadastro">
+                <div class="form-group"><label>Nome Completo:</label><input type="text" id="c-nome" required></div>
+                <div class="form-group"><label>E-mail:</label><input type="email" id="c-email" required></div>
+                <div class="form-group"><label>Senha:</label><input type="password" id="c-senha" required 
+       title="A senha deve ter 8 caracteres, incluindo letras maiúsculas, minúsculas e números.">
+                <div class="form-group">
+                    <label>Perfil:</label>
+                    <select id="tipo-usuario">
+                        <option value="aluno">Aluno</option>
+                        <option value="professor">Professor (@ifpr.edu.br)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-enviar">Solicitar Ativação</button>
+            </form>
+            <p class="trocar-form"><a href="#" id="link-v-login">Já tenho conta</a></p>
+        </div>
+    </template>
+
+    <template id="tpl-recuperar-senha">
+        <div class="login-card fade-in">
+            <h2>Recuperar Senha</h2>
+            <p style="text-align:center; font-size: 0.85rem; margin-bottom: 15px;">Enviaremos um código para o seu e-mail.</p>
+            <form id="form-recuperar-solicitar">
+                <div class="form-group"><label>E-mail:</label><input type="email" id="r-email" required></div>
+                <button type="submit" class="btn-enviar">Enviar Código</button>
+            </form>
+            <p class="trocar-form"><a href="#" id="link-v-login-rec">Voltar</a></p>
+        </div>
+    </template>
+
+    <template id="tpl-nova-senha">
+        <div class="login-card fade-in">
+            <h2>Nova Senha</h2>
+            <p id="msg-pin-rec" style="text-align:center; font-size: 0.8rem;"></p>
+            <form id="form-atualizar-senha">
+                <div class="form-group"><label>PIN de 6 dígitos:</label><input type="text" id="r-pin" maxlength="6" style="text-align:center; font-size:1.5rem;" required></div>
+                <div class="form-group"><label>Nova Senha:</label><input type="password" id="r-nova-senha" required></div>
+                <button type="submit" class="btn-enviar">Redefinir Senha</button>
+            </form>
+        </div>
+    </template>
+
+    <template id="tpl-pin">
+        <div class="login-card fade-in">
+            <h2>Validar PIN</h2>
+            <input type="text" id="input-pin" maxlength="6" style="text-align:center; font-size:2rem; width:100%; margin:20px 0; letter-spacing:8px;">
+            <button id="btn-v-pin" class="btn-enviar">Ativar Conta</button>
+        </div>
+    </template>
+
+    <template id="tpl-dash-professor">
+        <div class="dashboard fade-in">
+            <div class="dash-header">
+                <h2 id="txt-n-prof"></h2>
+                <div class="dash-nav-btns">
+                <input type="text" id="busca-turma" placeholder="Buscar nome ou código..." 
+                       style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-right: 10px; width: 200px;">
+                    <button id="btn-n-turma" class="btn-acao">+ Nova Turma</button>
+                    <button id="btn-logout" class="btn-logout">Sair</button>
+                </div>
+            </div>
+            <div id="lista-turmas" class="grid-cards"></div>
+        </div>
+    </template>
+
+    <template id="tpl-gestao-turma">
+        <div class="dashboard fade-in">
+            <button id="btn-v-prof" class="btn-voltar">⬅ Voltar</button>
+            <div class="dash-header"><h2 id="txt-g-nome"></h2></div>
+            <div class="gestao-container">
+                <section class="card-gestao"><h3>👥 Alunos</h3><div id="res-alunos" class="lista-simples"></div></section>
+                <section class="card-gestao"><h3>📅 Cronograma <button id="btn-agendar" class="btn-acao-micro">+ Agendar</button></h3><div id="res-cronograma" class="lista-simples"></div></section>
+                <section class="card-gestao"><h3>📝 Atividades <button id="btn-add-ativ" class="btn-acao-micro">+ Atividade</button></h3><div id="res-atividades" class="lista-simples"></div></section>
+                <section class="card-gestao"><h3>📚 Materiais <button id="btn-add-mat" class="btn-acao-micro">+ Material</button></h3><div id="res-materiais" class="lista-simples"></div></section>
+               
+<section class="card-gestao" style="grid-column: 1 / -1; min-height: auto;">
+    <h3>📥 Entregas dos Alunos (Cronograma e Atividades)</h3>
+    <div id="res-entregas" class="lista-simples" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; padding: 10px;">
+
+    </div>
+</section>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-dash-aluno">
+        <div class="dashboard fade-in">
+            <div class="dash-header">
+                <h2 id="txt-n-aluno"></h2>
+                <div class="dash-nav-btns">
+                    <button id="btn-e-turma" class="btn-acao" style="background:#2980b9;">+ Entrar em Turma</button>
+                    <button id="btn-l-aluno" class="btn-logout">Sair</button>
+                </div>
+            </div>
+            <div id="lista-turmas-aluno" class="grid-cards"></div>
+        </div>
+    </template>
+
+    <template id="tpl-materiais-aluno">
+        <div class="dashboard fade-in">
+            <button id="btn-v-est" class="btn-voltar">⬅ Voltar</button>
+            <h2 id="txt-m-nome" style="margin-bottom:15px; font-size:1.4rem;"></h2>
+            <div class="gestao-container">
+            <!-- Coluna 1: Cronograma -->
+            <section class="card-gestao">
+                <h3>📅 Cronograma</h3>
+                <div id="l-ag-prof" class="lista-simples"></div>
+            </section>
+            
+            <!-- Coluna 2: Conteúdos (Materiais/Links) -->
+            <section class="card-gestao">
+                <h3>📚 Conteúdos</h3>
+                <div id="l-mt-prof" class="lista-simples"></div>
+            </section>
+
+            <!-- Coluna 3: Atividades (Tarefas) -->
+            <section class="card-gestao">
+                <h3>📝 Atividades</h3>
+                <div id="l-at-prof" class="lista-simples"></div>
+            </section>
+        </div>
+        </div>
+    </template>
+
+    <!-- MODAIS -->
+    <template id="tpl-modal-conteudo">
+    <div class="modal-overlay">
+        <div class="login-card fade-in">
+            <!-- Adicionamos o ID que o JS procura abaixo -->
+            <h3 id="mod-c-titulo" style="text-align: center; margin-bottom: 15px;">Conteúdo</h3>
+            
+            <form id="form-c">
+                <div class="form-group"><label>Título:</label><input type="text" id="at-t" required></div>
+                
+                <div class="form-group">
+                    <label>Descrição:</label>
+                    <textarea id="at-desc" rows="3" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;"></textarea>
+                </div>
+
+                <div class="form-group"><label>Tipo:</label><select id="at-tp"></select></div>
+                <div class="form-group"><label>Link/URL:</label><input type="url" id="at-u"></div>
+                <div class="form-group" id="grp-prazo"><label>Prazo:</label><input type="date" id="at-d"></div>
+                
+                <button type="submit" class="btn-enviar">Salvar</button>
+                <button type="button" id="btn-f-modal" class="btn-cancelar">Fechar</button>
+            </form>
+        </div>
+    </div>
+</template>
+
+   <template id="tpl-modal-agendar">
+    <div class="modal-overlay">
+        <div class="login-card fade-in" style="max-width: 550px; border-radius: 30px;">
+            <h3 style="text-align: center; margin-bottom: 20px; color: var(--dark-green);">Agenda Cronograma</h3>
+            <form id="form-ag">
+                <!-- Título -->
+                <div class="form-group">
+                    <label>Título:</label>
+                    <input type="text" id="ag-t" required placeholder="Ex: Aula de História">
+                </div>
+                
+                <!-- Datas e Horas (Lado a lado) -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div class="form-group"><label>Data Início:</label><input type="date" id="ag-d-ini" required></div>
+                    <div class="form-group"><label>Data Fim:</label><input type="date" id="ag-d-fim" required></div>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div class="form-group"><label>Hora Início:</label><input type="time" id="ag-h1" required></div>
+                    <div class="form-group"><label>Hora Fim:</label><input type="time" id="ag-h2" required></div>
+                </div>
+
+                <!-- Conteúdo a Estudar -->
+                <div class="form-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
+                    <label>📖 Conteúdo a estudar:</label>
+                    <textarea id="ag-conteudo" rows="2" placeholder="Descrição dos conteúdos..." style="width:100%; border: 1px solid #eee; margin-bottom: 8px;"></textarea>
+                    <input type="url" id="ag-link" placeholder="Link/URL de apoio (PDF, Site, etc)">
+                </div>
+
+                <!-- Atividades -->
+                <div class="form-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
+                    <label>📝 Atividades:</label>
+                    <textarea id="ag-ativ-desc" rows="2" placeholder="Descrição das atividades a serem desenvolvidas..."></textarea>
+                    
+                    <label style="font-size: 0.75rem; margin-top: 5px;">Vincular à Atividade do Sistema (opcional):</label>
+                    <select id="ag-vinc-ativ">
+                        <option value="">Nenhuma</option>
+                    </select>
+                </div>
+
+                <!-- Para quem -->
+                <div class="form-group">
+                    <label>👤 Para quem:</label>
+                    <select id="ag-sel-aluno">
+                        <option value="geral">Geral (Toda a Turma)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-enviar">Finalizar</button>
+                <button type="button" id="btn-f-agenda" class="btn-cancelar">Cancelar</button>
+            </form>
+        </div>
+    </div>
+</template>
+
+
+    <template id="tpl-modal-criar-turma">
+        <div class="modal-overlay">
+            <div class="login-card fade-in">
+                <h3>Criar Nova Turma</h3>
+                <form id="form-criar-turma">
+                    <div class="form-group"><label>Nome da Turma:</label><input type="text" id="turma-nome" required></div>
+                    <button type="submit" class="btn-enviar">Criar</button>
+                    <button type="button" id="btn-cancelar-turma" class="btn-cancelar">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </template>
+
+<template id="tpl-modal-detalhes-agendamento">
+    <div class="modal-overlay">
+        <div class="login-card fade-in" style="max-width: 500px; max-height: 90vh; overflow-y: auto; border-top-color: #27ae60;">
+            <h2 id="det-titulo" style="color: var(--dark-green); margin-bottom: 10px;"></h2>
+            <p id="det-data" style="font-weight: bold; font-size: 0.9rem; color: #666;"></p>
+            <hr style="margin: 15px 0; opacity: 0.2;">
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: bold; color: var(--logo-green);">📖 Conteúdo para Estudar:</label>
+                <p id="det-conteudo" style="background: #f9f9f9; padding: 10px; border-radius: 8px; font-size: 0.9rem; margin-top: 5px;"></p>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: bold; color: #c0392b;">📝 Atividades a Desenvolver:</label>
+                <p id="det-atividades" style="background: #f9f9f9; padding: 10px; border-radius: 8px; font-size: 0.9rem; margin-top: 5px;"></p>
+            </div>
+
+            <div id="area-link" style="margin-bottom: 20px; display: none;">
+                <a id="det-link" href="#" target="_blank" class="btn-acao" style="display: block; text-align: center; text-decoration: none; background: #6a8239;">Abrir Material de Apoio</a>
+            </div>
+
+            <!-- ÁREA DE ENTREGA DO ALUNO (O QUE VOCÊ PEDIU) -->
+            <div id="secao-entrega" style="background: #f0f7f0; border: 2px dashed #27ae60; padding: 15px; border-radius: 12px; margin-top: 20px;">
+                <h4 style="color: #27ae60; margin-bottom: 10px; font-size: 1rem;">📤 Entregar Atividade Proposta</h4>
+                <p style="font-size: 0.75rem; color: #555; margin-bottom: 10px;">Cole o link do seu trabalho (Drive, PDF, Imagem ou Canva):</p>
+                <input type="url" id="link-estudante" placeholder="https://link-do-seu-trabalho.com" 
+                       style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px;">
+                <button type="button" id="btn-enviar-estudo" class="btn-enviar" style="background: #27ae60;">Confirmar Entrega</button>
+            </div>
+
+            <button type="button" id="btn-fechar-detalhes" class="btn-cancelar" style="margin-top: 15px;">Fechar</button>
+        </div>
+    </div>
+</template>
+
+<!-- Template para Envio de Atividade -->
+<template id="tpl-modal-enviar-atividade">
+    <div class="modal-overlay">
+        <div class="login-card fade-in" style="max-width: 450px; border-top-color: #27ae60;">
+            <h3 id="env-titulo" style="text-align: center; color: var(--dark-green);">Enviar Atividade</h3>
+            <p id="env-nome-at" style="text-align: center; font-size: 0.9rem; margin-bottom: 20px;"></p>
+            
+            <form id="form-envio-aluno">
+                <div class="form-group">
+                    <label>Link do Trabalho (PDF, Imagem ou Drive):</label>
+                    <input type="url" id="env-url" placeholder="https://link-do-seu-trabalho.com" required>
+                    <small style="display: block; margin-top: 5px; color: #666;">
+                        Dica: Envie o link do Google Drive, Canva ou hospede sua imagem/PDF.
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn-enviar" style="background: #27ae60;">Finalizar Envio</button>
+                <button type="button" id="btn-f-envio" class="btn-cancelar">Cancelar</button>
+            </form>
+        </div>
+    </div>
+</template>
+
+     <footer><p>&copy; Agenda.edu. Todos os direitos reservados.</p></footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/SupaBaseClientes.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
