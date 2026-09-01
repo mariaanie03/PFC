@@ -459,25 +459,121 @@ async function renderizarAluno() {
             </div>`).join('');
     }
 }
-
 async function verMateriaisAluno(id, nome) {
     carregarTela('tpl-materiais-aluno');
     document.getElementById('txt-m-nome').innerText = nome;
     document.getElementById('btn-v-est').onclick = renderizarAluno;
     
-    // Aluno vê itens "gerais" (null) ou específicos dele
-    const { data: ag } = await _supabase.from('cronograma').select('*').eq('turma_id', id).or(`aluno_id.is.null,aluno_id.eq.${getID(usuarioLogado)}`);
+    // Busca cronograma
+    const { data: ag } = await _supabase.from('cronograma')
+        .select('*')
+        .eq('turma_id', id)
+        .or(`aluno_id.is.null,aluno_id.eq.${getID(usuarioLogado)}`)
+        .order('data', {ascending: true});
+
     const { data: it } = await _supabase.from('atividades').select('*').eq('turma_id', id);
     
-    document.getElementById('l-ag-prof').innerHTML = ag?.map(a => `<div class="item-cronograma"><strong>${a.data}</strong>: ${a.titulo}</div>`).join('') || "Vazio";
-    document.getElementById('l-mt-prof').innerHTML = it?.map(a => `<div class="item-cronograma"><span>${a.titulo}</span> ${a.url_midia ? `<a href="${a.url_midia}" target="_blank" style="color:#2980b9; font-weight:bold; text-decoration:none;">Abrir</a>` : ''}</div>`).join('') || "Vazio";
+
+    const containerAg = document.getElementById('l-ag-prof');
+    containerAg.innerHTML = ag?.map(a => `
+        <div class="item-cronograma" style="display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #f39c12;">
+            <div>
+                <small>📅 ${a.data}</small><br>
+                <strong>${a.titulo}</strong>
+            </div>
+            <button onclick='abrirDetalhesAluno(${JSON.stringify(a)})' class="btn-acao-micro">Ver tudo</button>
+        </div>
+    `).join('') || "Nenhum agendamento.";
+
+
+
+
+    const conteudos = it?.filter(item => item.tipo !== 'tarefa');
+    document.getElementById('l-mt-prof').innerHTML = conteudos?.map(a => `
+        <div class="item-cronograma" style="border-left: 4px solid #27ae60;">
+            <div style="flex:1;">
+                <span>${a.titulo}</span>
+            </div>
+            ${a.url_midia ? `<a href="${a.url_midia}" target="_blank" class="btn-acao-micro" style="text-decoration:none;">Abrir</a>` : ''}
+        </div>`).join('') || "Nenhum material disponível.";
+
+ 
+   const atividades = it?.filter(item => item.tipo === 'tarefa');
+document.getElementById('l-at-prof').innerHTML = atividades?.map(a => `
+    <div class="item-cronograma" style="border-left: 4px solid #c0392b; flex-direction: column; align-items: flex-start;">
+        <div style="width: 100%; display: flex; justify-content: space-between;">
+            <strong>${a.titulo}</strong>
+            <span style="font-size: 0.7rem; color: #c0392b; font-weight: bold;">TAREFA</span>
+        </div>
+        ${a.data_entrega ? `<small>Prazo: ${a.data_entrega}</small>` : ''}
+        
+        <div style="margin-top: 10px; display: flex; gap: 5px; width: 100%;">
+            <button onclick='abrirModalEnvio(${JSON.stringify(a)})' class="btn-acao-micro" style="background: #27ae60; flex: 1;">
+                📤 Enviar Atividade
+            </button>
+            ${a.url_midia ? `<a href="${a.url_midia}" target="_blank" class="btn-acao-micro" style="text-decoration:none; background:#555;">Ver Instruções</a>` : ''}
+        </div>
+    </div>
+`).join('') || "Nenhuma atividade pendente.";
 }
 
-async function excluirItem(id, tipo, tId) {
-    if(!confirm("Excluir?")) return;
-    await _supabase.from(tipo==='ag'?'cronograma':'atividades').delete().eq('id', id);
-    carregarDadosGestao(tId);
+
+function abrirDetalhesAluno(item) {
+    const clone = document.getElementById('tpl-modal-detalhes-agendamento').content.cloneNode(true);
+    document.body.appendChild(clone);
+
+    const modal = document.querySelector('.modal-overlay');
+    
+    modal.querySelector('#det-titulo').innerText = item.titulo;
+    modal.querySelector('#det-data').innerText = `📅 Dia: ${item.data} | ⏰ Horário: ${item.hora_inicio} às ${item.hora_fim}`;
+    
+
+    modal.querySelector('#det-conteudo').innerText = item.conteudo_estudo || "O professor não descreveu o conteúdo.";
+    
+
+    modal.querySelector('#det-atividades').innerText = item.atividades_descricao || "Não há atividades específicas descritas.";
+
+    if (item.link_material) {
+        modal.querySelector('#area-link').style.display = "block";
+        modal.querySelector('#det-link').href = item.link_material;
+    }
+
+
+    modal.querySelector('#btn-fechar-detalhes').onclick = () => modal.remove();
 }
 
+
+
+function abrirModalEnvio(atividade) {
+    const clone = document.getElementById('tpl-modal-enviar-atividade').content.cloneNode(true);
+    document.body.appendChild(clone);
+
+    const modal = document.querySelector('.modal-overlay');
+    modal.querySelector('#env-nome-at').innerText = atividade.titulo;
+
+    document.getElementById('btn-f-envio').onclick = () => modal.remove();
+
+    document.getElementById('form-envio-aluno').onsubmit = async (e) => {
+        e.preventDefault();
+        const urlResposta = document.getElementById('env-url').value;
+
+        // Salva no banco de dados Supabase na tabela progresso_aluno
+        const { error } = await _supabase.from('progresso_aluno').insert([{
+            atividade_id: atividade.id || atividade['eu ia'],
+            aluno_id: getID(usuarioLogado),
+            concluido: true,
+            data_conclusao: new Date().toISOString(),
+            // Se você não tiver a coluna 'resposta_url' no banco, ela deve ser criada como TEXT
+            resposta_url: urlResposta 
+        }]);
+
+        if (error) {
+            alert("Erro ao enviar: " + error.message);
+        } else {
+            alert("Atividade enviada com sucesso!");
+            modal.remove();
+        }
+    };
+}
 btnHome.onclick = () => { carregarTela('tpl-home'); if (usuarioLogado) btnLoginMenu.textContent = "Meu Painel"; };
 btnLoginMenu.onclick = renderizarDashboard;

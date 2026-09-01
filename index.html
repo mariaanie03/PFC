@@ -152,9 +152,24 @@
             <button id="btn-v-est" class="btn-voltar">⬅ Voltar</button>
             <h2 id="txt-m-nome" style="margin-bottom:15px; font-size:1.4rem;"></h2>
             <div class="gestao-container">
-                <section class="card-gestao"><h3>📅 Cronograma</h3><div id="l-ag-prof" class="lista-simples"></div></section>
-                <section class="card-gestao"><h3>📚 Conteúdos</h3><div id="l-mt-prof" class="lista-simples"></div></section>
-            </div>
+            <!-- Coluna 1: Cronograma -->
+            <section class="card-gestao">
+                <h3>📅 Cronograma</h3>
+                <div id="l-ag-prof" class="lista-simples"></div>
+            </section>
+            
+            <!-- Coluna 2: Conteúdos (Materiais/Links) -->
+            <section class="card-gestao">
+                <h3>📚 Conteúdos</h3>
+                <div id="l-mt-prof" class="lista-simples"></div>
+            </section>
+
+            <!-- Coluna 3: Atividades (Tarefas) -->
+            <section class="card-gestao">
+                <h3>📝 Atividades</h3>
+                <div id="l-at-prof" class="lista-simples"></div>
+            </section>
+        </div>
         </div>
     </template>
 
@@ -253,6 +268,58 @@
         </div>
     </template>
 
+
+
+<template id="tpl-modal-detalhes-agendamento">
+    <div class="modal-overlay">
+        <div class="login-card fade-in" style="max-width: 500px;">
+            <h2 id="det-titulo" style="color: var(--dark-green); margin-bottom: 10px;"></h2>
+            <p id="det-data" style="font-weight: bold; font-size: 0.9rem; color: #666;"></p>
+            <hr style="margin: 15px 0; opacity: 0.2;">
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: bold; color: var(--logo-green);">📖 Conteúdo para Estudar:</label>
+                <p id="det-conteudo" style="background: #f9f9f9; padding: 10px; border-radius: 8px; font-size: 0.9rem; margin-top: 5px;"></p>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: bold; color: #c0392b;">📝 Atividades a Desenvolver:</label>
+                <p id="det-atividades" style="background: #f9f9f9; padding: 10px; border-radius: 8px; font-size: 0.9rem; margin-top: 5px;"></p>
+            </div>
+
+            <div id="area-link" style="margin-bottom: 20px; display: none;">
+                <a id="det-link" href="#" target="_blank" class="btn-acao" style="display: block; text-align: center; text-decoration: none;">Abrir Material de Apoio</a>
+            </div>
+
+            <button type="button" id="btn-fechar-detalhes" class="btn-cancelar">Fechar</button>
+        </div>
+    </div>
+</template>
+
+
+
+<!-- Template para Envio de Atividade -->
+<template id="tpl-modal-enviar-atividade">
+    <div class="modal-overlay">
+        <div class="login-card fade-in" style="max-width: 450px; border-top-color: #27ae60;">
+            <h3 id="env-titulo" style="text-align: center; color: var(--dark-green);">Enviar Atividade</h3>
+            <p id="env-nome-at" style="text-align: center; font-size: 0.9rem; margin-bottom: 20px;"></p>
+            
+            <form id="form-envio-aluno">
+                <div class="form-group">
+                    <label>Link do Trabalho (PDF, Imagem ou Drive):</label>
+                    <input type="url" id="env-url" placeholder="https://link-do-seu-trabalho.com" required>
+                    <small style="display: block; margin-top: 5px; color: #666;">
+                        Dica: Envie o link do Google Drive, Canva ou hospede sua imagem/PDF.
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn-enviar" style="background: #27ae60;">Finalizar Envio</button>
+                <button type="button" id="btn-f-envio" class="btn-cancelar">Cancelar</button>
+            </form>
+        </div>
+    </div>
+</template>
 
      <footer><p>&copy; Agenda.edu. Todos os direitos reservados.</p></footer>
 
