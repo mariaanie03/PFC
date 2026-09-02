@@ -60,7 +60,7 @@
                 <div class="form-group"><label>Nome Completo:</label><input type="text" id="c-nome" required></div>
                 <div class="form-group"><label>E-mail:</label><input type="email" id="c-email" required></div>
                 <div class="form-group"><label>Senha:</label><input type="password" id="c-senha" required 
-       title="A senha deve ter 8 caracteres, incluindo letras maiúsculas, minúsculas e números.">
+       title="A senha deve ter 8 caracteres, incluindo letras maiúsculas, minúsculas e números."></div>
                 <div class="form-group">
                     <label>Perfil:</label>
                     <select id="tipo-usuario">
@@ -130,6 +130,22 @@
                 <section class="card-gestao"><h3>📅 Cronograma <button id="btn-agendar" class="btn-acao-micro">+ Agendar</button></h3><div id="res-cronograma" class="lista-simples"></div></section>
                 <section class="card-gestao"><h3>📝 Atividades <button id="btn-add-ativ" class="btn-acao-micro">+ Atividade</button></h3><div id="res-atividades" class="lista-simples"></div></section>
                 <section class="card-gestao"><h3>📚 Materiais <button id="btn-add-mat" class="btn-acao-micro">+ Material</button></h3><div id="res-materiais" class="lista-simples"></div></section>
+                
+                <!-- ADIÇÃO: SEÇÃO DE CORREÇÃO PARA O PROFESSOR -->
+                <section class="card-gestao" style="grid-column: 1 / -1; min-height: auto; margin-top: 20px; border-top-color: #f39c12;">
+                <h3>⏳ Atividades Pendentes (Aguardando Correção)</h3>
+                <div id="res-pendentes" class="lista-simples" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <!-- Aparecerá aqui o que não tem nota -->
+                </div>
+            </section>
+
+            <!-- BLOCO 2: ATIVIDADES JÁ CORRIGIDAS -->
+            <section class="card-gestao" style="grid-column: 1 / -1; min-height: auto; margin-top: 20px; border-top-color: #27ae60;">
+                <h3>✅ Atividades Já Corrigidas</h3>
+                <div id="res-corrigidas" class="lista-simples" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <!-- Aparecerá aqui o que já tem nota -->
+                </div>
+            </section>
             </div>
         </div>
     </template>
@@ -152,19 +168,14 @@
             <button id="btn-v-est" class="btn-voltar">⬅ Voltar</button>
             <h2 id="txt-m-nome" style="margin-bottom:15px; font-size:1.4rem;"></h2>
             <div class="gestao-container">
-            <!-- Coluna 1: Cronograma -->
             <section class="card-gestao">
                 <h3>📅 Cronograma</h3>
                 <div id="l-ag-prof" class="lista-simples"></div>
             </section>
-            
-            <!-- Coluna 2: Conteúdos (Materiais/Links) -->
             <section class="card-gestao">
                 <h3>📚 Conteúdos</h3>
                 <div id="l-mt-prof" class="lista-simples"></div>
             </section>
-
-            <!-- Coluna 3: Atividades (Tarefas) -->
             <section class="card-gestao">
                 <h3>📝 Atividades</h3>
                 <div id="l-at-prof" class="lista-simples"></div>
@@ -177,21 +188,16 @@
     <template id="tpl-modal-conteudo">
     <div class="modal-overlay">
         <div class="login-card fade-in">
-            <!-- Adicionamos o ID que o JS procura abaixo -->
             <h3 id="mod-c-titulo" style="text-align: center; margin-bottom: 15px;">Conteúdo</h3>
-            
             <form id="form-c">
                 <div class="form-group"><label>Título:</label><input type="text" id="at-t" required></div>
-                
                 <div class="form-group">
                     <label>Descrição:</label>
                     <textarea id="at-desc" rows="3" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;"></textarea>
                 </div>
-
                 <div class="form-group"><label>Tipo:</label><select id="at-tp"></select></div>
                 <div class="form-group"><label>Link/URL:</label><input type="url" id="at-u"></div>
                 <div class="form-group" id="grp-prazo"><label>Prazo:</label><input type="date" id="at-d"></div>
-                
                 <button type="submit" class="btn-enviar">Salvar</button>
                 <button type="button" id="btn-f-modal" class="btn-cancelar">Fechar</button>
             </form>
@@ -204,49 +210,37 @@
         <div class="login-card fade-in" style="max-width: 550px; border-radius: 30px;">
             <h3 style="text-align: center; margin-bottom: 20px; color: var(--dark-green);">Agenda Cronograma</h3>
             <form id="form-ag">
-                <!-- Título -->
                 <div class="form-group">
                     <label>Título:</label>
                     <input type="text" id="ag-t" required placeholder="Ex: Aula de História">
                 </div>
-                
-                <!-- Datas e Horas (Lado a lado) -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                     <div class="form-group"><label>Data Início:</label><input type="date" id="ag-d-ini" required></div>
                     <div class="form-group"><label>Data Fim:</label><input type="date" id="ag-d-fim" required></div>
                 </div>
-                
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                     <div class="form-group"><label>Hora Início:</label><input type="time" id="ag-h1" required></div>
                     <div class="form-group"><label>Hora Fim:</label><input type="time" id="ag-h2" required></div>
                 </div>
-
-                <!-- Conteúdo a Estudar -->
                 <div class="form-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
                     <label>📖 Conteúdo a estudar:</label>
                     <textarea id="ag-conteudo" rows="2" placeholder="Descrição dos conteúdos..." style="width:100%; border: 1px solid #eee; margin-bottom: 8px;"></textarea>
                     <input type="url" id="ag-link" placeholder="Link/URL de apoio (PDF, Site, etc)">
                 </div>
-
-                <!-- Atividades -->
                 <div class="form-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
                     <label>📝 Atividades:</label>
                     <textarea id="ag-ativ-desc" rows="2" placeholder="Descrição das atividades a serem desenvolvidas..."></textarea>
-                    
                     <label style="font-size: 0.75rem; margin-top: 5px;">Vincular à Atividade do Sistema (opcional):</label>
                     <select id="ag-vinc-ativ">
                         <option value="">Nenhuma</option>
                     </select>
                 </div>
-
-                <!-- Para quem -->
                 <div class="form-group">
                     <label>👤 Para quem:</label>
                     <select id="ag-sel-aluno">
                         <option value="geral">Geral (Toda a Turma)</option>
                     </select>
                 </div>
-
                 <button type="submit" class="btn-enviar">Finalizar</button>
                 <button type="button" id="btn-f-agenda" class="btn-cancelar">Cancelar</button>
             </form>
@@ -272,7 +266,7 @@
 
 <template id="tpl-modal-detalhes-agendamento">
     <div class="modal-overlay">
-        <div class="login-card fade-in" style="max-width: 500px;">
+        <div class="login-card fade-in" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
             <h2 id="det-titulo" style="color: var(--dark-green); margin-bottom: 10px;"></h2>
             <p id="det-data" style="font-weight: bold; font-size: 0.9rem; color: #666;"></p>
             <hr style="margin: 15px 0; opacity: 0.2;">
@@ -291,7 +285,16 @@
                 <a id="det-link" href="#" target="_blank" class="btn-acao" style="display: block; text-align: center; text-decoration: none;">Abrir Material de Apoio</a>
             </div>
 
-            <button type="button" id="btn-fechar-detalhes" class="btn-cancelar">Fechar</button>
+            <!-- ADIÇÃO: ÁREA DE ENTREGA DO ALUNO NO CRONOGRAMA -->
+            <div id="secao-entrega" style="background: #f0f7f0; border: 2px dashed #27ae60; padding: 15px; border-radius: 12px; margin-top: 20px;">
+                <h4 style="color: #27ae60; margin-bottom: 10px; font-size: 1rem;">📤 Entregar Atividade Proposta</h4>
+                <p style="font-size: 0.75rem; color: #555; margin-bottom: 10px;">Cole o link do seu trabalho (Drive, PDF, Imagem ou Canva):</p>
+                <input type="url" id="link-estudante" placeholder="https://link-do-seu-trabalho.com" 
+                       style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px;">
+                <button type="button" id="btn-enviar-estudo" class="btn-enviar" style="background: #27ae60;">Confirmar Entrega</button>
+            </div>
+
+            <button type="button" id="btn-fechar-detalhes" class="btn-cancelar" style="margin-top: 15px;">Fechar</button>
         </div>
     </div>
 </template>
