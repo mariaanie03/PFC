@@ -128,24 +128,21 @@
             <div class="gestao-container">
                 <section class="card-gestao"><h3>👥 Alunos</h3><div id="res-alunos" class="lista-simples"></div></section>
                 <section class="card-gestao"><h3>📅 Cronograma <button id="btn-agendar" class="btn-acao-micro">+ Agendar</button></h3><div id="res-cronograma" class="lista-simples"></div></section>
-                <section class="card-gestao"><h3>📝 Atividades <button id="btn-add-ativ" class="btn-acao-micro">+ Atividade</button></h3><div id="res-atividades" class="lista-simples"></div></section>
-                <section class="card-gestao"><h3>📚 Materiais <button id="btn-add-mat" class="btn-acao-micro">+ Material</button></h3><div id="res-materiais" class="lista-simples"></div></section>
-                
-                <!-- ADIÇÃO: SEÇÃO DE CORREÇÃO PARA O PROFESSOR -->
-                <section class="card-gestao" style="grid-column: 1 / -1; min-height: auto; margin-top: 20px; border-top-color: #f39c12;">
-                <h3>⏳ Atividades Pendentes (Aguardando Correção)</h3>
-                <div id="res-pendentes" class="lista-simples" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+         <section class="card-gestao" style="border-top-color: #12c6f3;">
+                <h3>⏳ Pendentes</h3>
+                <div id="res-pendentes" class="lista-simples" style="display: flex; flex-direction: column; gap: 15px;">
                     <!-- Aparecerá aqui o que não tem nota -->
                 </div>
             </section>
 
             <!-- BLOCO 2: ATIVIDADES JÁ CORRIGIDAS -->
-            <section class="card-gestao" style="grid-column: 1 / -1; min-height: auto; margin-top: 20px; border-top-color: #27ae60;">
-                <h3>✅ Atividades Já Corrigidas</h3>
-                <div id="res-corrigidas" class="lista-simples" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+            <section class="card-gestao" style="border-top-color: #27ae60;">
+                <h3>✅ Corrigidas</h3>
+                <div id="res-corrigidas" class="lista-simples" style="display: flex; flex-direction: column; gap: 15px;">
                     <!-- Aparecerá aqui o que já tem nota -->
                 </div>
             </section>
+          
             </div>
         </div>
     </template>
@@ -171,14 +168,6 @@
             <section class="card-gestao">
                 <h3>📅 Cronograma</h3>
                 <div id="l-ag-prof" class="lista-simples"></div>
-            </section>
-            <section class="card-gestao">
-                <h3>📚 Conteúdos</h3>
-                <div id="l-mt-prof" class="lista-simples"></div>
-            </section>
-            <section class="card-gestao">
-                <h3>📝 Atividades</h3>
-                <div id="l-at-prof" class="lista-simples"></div>
             </section>
         </div>
         </div>

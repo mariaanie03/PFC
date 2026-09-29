@@ -112,7 +112,7 @@ function mostrarValidacaoPin(email, pinCorreto, nome, tipo, senha) {
     carregarTela('tpl-pin');
     document.getElementById('btn-v-pin').onclick = async () => {
         if (document.getElementById('input-pin').value === pinCorreto) {
-            await _supabase.from('usuarios').insert([{ nome, email, senha, tipo, email_validado: true }]);
+            await _supabase.from('usuarios').insert([{ nome, email, senha, tipo, email_validado: true, pin_validacao: true }]);
             alert("Ativado!"); mostrarLogin();
         } else alert("PIN errado.");
     };
@@ -174,8 +174,6 @@ async function gerenciarTurma(turmaId, nomeTurma) {
     document.getElementById('txt-g-nome').innerText = `Gestão: ${nomeTurma}`;
     document.getElementById('btn-v-prof').onclick = renderizarProfessor;
     document.getElementById('btn-agendar').onclick = () => abrirModalAgendar(turmaId);
-    document.getElementById('btn-add-ativ').onclick = () => abrirModalConteudo(turmaId, 'atividade');
-    document.getElementById('btn-add-mat').onclick = () => abrirModalConteudo(turmaId, 'material');
     carregarDadosGestao(turmaId);
 }
 
@@ -220,19 +218,7 @@ async function carregarDadosGestao(turmaId) {
         }).join('') || "Nenhum agendamento.";
     }
 
-    const renderPadrao = (i) => `
-        <div class="item-cronograma">
-            <span>${i.titulo}</span>
-            <div style="display:flex; gap:5px;">
-                <button onclick='editarItem(${JSON.stringify(i)})' style="border:none; background:none; cursor:pointer;">✏️</button>
-                <button onclick="excluirItem(${i.id || i['eu ia']}, 'atividades', ${turmaId})" style="border:none; background:none; cursor:pointer;">🗑️</button>
-            </div>
-        </div>`;
 
-    document.getElementById('res-atividades').innerHTML = it?.filter(x => x.tipo === 'tarefa').map(renderPadrao).join('') || "---";
-    document.getElementById('res-materiais').innerHTML = it?.filter(x => x.tipo !== 'tarefa').map(renderPadrao).join('') || "---";
-
-// --- LÓGICA DE SEPARAÇÃO: PENDENTES VS CORRIGIDAS ---
     const { data: entregas } = await _supabase.from('progresso_aluno')
         .select(`id, resposta_url, nota, feedback, usuarios!inner(nome), cronograma(titulo, turma_id)`)
         .eq('cronograma.turma_id', turmaId);
@@ -241,11 +227,10 @@ async function carregarDadosGestao(turmaId) {
     const containerCorrigidas = document.getElementById('res-corrigidas');
 
     if (containerPendentes && containerCorrigidas) {
-        // Filtramos em dois grupos
+
         const listaPendentes = entregas?.filter(e => e.nota === null) || [];
         const listaCorrigidas = entregas?.filter(e => e.nota !== null) || [];
 
-        // 1. Renderiza Pendentes (Fundo cinza para trabalho, botões de ação)
         containerPendentes.innerHTML = listaPendentes.map(e => `
             <div class="card-item" style="border-top-color: #f39c12; font-size: 0.8rem;">
                 <strong style="color: var(--dark-green);">${e.usuarios?.nome}</strong>
@@ -265,7 +250,7 @@ async function carregarDadosGestao(turmaId) {
                 </div>
             </div>`).join('') || "<p style='font-size:0.8rem;'>Nenhuma atividade pendente.</p>";
 
-        // 2. Renderiza Corrigidas (O design "Card Verde" que você pediu)
+       
         containerCorrigidas.innerHTML = listaCorrigidas.map(e => `
             <div class="card-item" style="border-top: 5px solid #27ae60; background: #fafffa; padding: 15px; border-radius: 12px; font-size: 0.8rem;">
                 <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 10px;">
@@ -431,18 +416,7 @@ async function verMateriaisAluno(id, nome) {
 
     ag?.forEach(a => { const btn = document.getElementById(`btn-ver-${a.id}`); if(btn) btn.onclick = () => abrirDetalhesAluno(a); });
 
-    // Renderizar Materiais
-    document.getElementById('l-mt-prof').innerHTML = it?.filter(x => x.tipo !== 'tarefa').map(a => `
-        <div class="item-cronograma"><span>${a.titulo}</span>${a.url_midia ? `<a href="${a.url_midia}" target="_blank" class="btn-acao-micro">Abrir</a>` : ''}</div>
-    `).join('') || "Vazio";
-
-    // Renderizar Atividades (Com nota na lista)
-    document.getElementById('l-at-prof').innerHTML = it?.filter(x => x.tipo === 'tarefa').map(a => `
-        <div class="item-cronograma">
-            <div style="flex:1"><strong>${a.titulo}</strong> ${acharNota(a.id || a['eu ia'], 'ativ')}</div>
-            <button onclick='abrirModalEnvio(${JSON.stringify(a)})' class="btn-acao-micro" style="background: #27ae60;">📤 Enviar</button>
-        </div>
-    `).join('') || "Vazio";
+   
 }
 
 async function abrirDetalhesAluno(item) {

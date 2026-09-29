@@ -228,10 +228,10 @@ main:has(.dashboard), main:has(.gestao-container) {
 
 /* Ajuste para que o card dentro do modal não ultrapasse a tela */
 .modal-overlay .login-card {
-    max-height: 90vh; /* Altura máxima de 90% da tela */
-    overflow-y: auto;  /* Ativa a barra de rolagem vertical se necessário */
-    width: 95%;       /* Garante que em telas pequenas ele não cole nas bordas */
-    margin: 20px;     /* Margem de segurança */
+    max-height: 90vh; 
+    overflow-y: auto;  
+    width: 95%;      
+    margin: 20px;     
 }
 
 /* Deixa a barra de rolagem do modal mais bonita (opcional) */
@@ -291,12 +291,25 @@ main:has(.dashboard), main:has(.gestao-container) {
 .card-gestao:nth-child(3) { border-top-color: #c0392b; } 
 .card-gestao:nth-child(4) { border-top-color: #27ae60; }
 
+.lista-simples {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 60vh;
+    padding-right: 5px;
+}
+
+/* Estiliza a barra de rolagem */
+.lista-simples::-webkit-scrollbar { width: 6px; }
+.lista-simples::-webkit-scrollbar-track { background: #f9f9f9; border-radius: 8px; }
+.lista-simples::-webkit-scrollbar-thumb { background: #ccc; border-radius: 8px; }
+
 .card-gestao h3 { 
     font-size: 1rem; 
     margin-bottom: 20px; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
+    
 }
 
 .item-cronograma {
