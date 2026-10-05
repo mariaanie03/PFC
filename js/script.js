@@ -170,6 +170,7 @@ function abrirModalCriarTurma() {
 }
 
 async function gerenciarTurma(turmaId, nomeTurma) {
+    usuarioLogado.turma_atual_id = turmaId; // CORREÇÃO: Salva a turma para o sistema não se perder
     carregarTela('tpl-gestao-turma');
     document.getElementById('txt-g-nome').innerText = `Gestão: ${nomeTurma}`;
     document.getElementById('btn-v-prof').onclick = renderizarProfessor;
@@ -337,10 +338,13 @@ async function abrirModalAgendar(turmaId, item = null) {
 
     const { data: atividades } = await _supabase.from('atividades').select('*').eq('turma_id', turmaId);
     const selAtividades = clone.querySelector('#ag-vinc-ativ');
+    
+    // MANTENDO O SEU "EU IA" INTACTO AQUI:
     atividades?.forEach(ativ => { const o = document.createElement('option'); o.value = ativ.id || ativ['eu ia']; o.textContent = ativ.titulo; selAtividades.appendChild(o); });
 
     document.body.appendChild(clone);
     const modal = document.querySelector('.modal-overlay');
+    
     if (item) {
         document.getElementById('ag-t').value = item.titulo || "";
         document.getElementById('ag-d-ini').value = item.data || "";
@@ -356,11 +360,46 @@ async function abrirModalAgendar(turmaId, item = null) {
 
     document.getElementById('form-ag').onsubmit = async (e) => {
         e.preventDefault();
-        const payload = { turma_id: turmaId, titulo: document.getElementById('ag-t').value, data: document.getElementById('ag-d-ini').value, data_fim: document.getElementById('ag-d-fim').value, hora_inicio: document.getElementById('ag-h1').value, hora_fim: document.getElementById('ag-h2').value, aluno_id: document.getElementById('ag-sel-aluno').value === 'geral' ? null : document.getElementById('ag-sel-aluno').value, atividade_vinculada_id: document.getElementById('ag-vinc-ativ').value || null, conteudo_estudo: document.getElementById('ag-conteudo').value, link_material: document.getElementById('ag-link').value, atividades_descricao: document.getElementById('ag-ativ-desc').value };
-        if (item) await _supabase.from('cronograma').update(payload).eq('id', item.id);
-        else await _supabase.from('cronograma').insert([payload]);
-        modal.remove(); carregarDadosGestao(turmaId);
+        
+        // CORREÇÃO DO ERRO 400: Removemos a propriedade "atividade_vinculada_id" daqui de dentro.
+        // Assim o Supabase não trava ao tentar salvar na tabela Cronograma.
+        const payload = { 
+            turma_id: turmaId, 
+            titulo: document.getElementById('ag-t').value, 
+            data: document.getElementById('ag-d-ini').value, 
+            data_fim: document.getElementById('ag-d-fim').value, 
+            hora_inicio: document.getElementById('ag-h1').value, 
+            hora_fim: document.getElementById('ag-h2').value, 
+            aluno_id: document.getElementById('ag-sel-aluno').value === 'geral' ? null : document.getElementById('ag-sel-aluno').value, 
+            conteudo_estudo: document.getElementById('ag-conteudo').value, 
+            link_material: document.getElementById('ag-link').value, 
+            atividades_descricao: document.getElementById('ag-ativ-desc').value 
+        };
+        
+        const atividadeVinculadaId = document.getElementById('ag-vinc-ativ').value || null;
+
+        if (item) {
+            // Atualiza o agendamento
+            await _supabase.from('cronograma').update(payload).eq('id', item.id);
+            
+            // Se o professor escolheu vincular uma atividade, atualiza na tabela correta (atividades)
+            if (atividadeVinculadaId) {
+                await _supabase.from('atividades').update({ id_cronograma: item.id }).eq('id', atividadeVinculadaId);
+            }
+        } else {
+            // Cria um novo agendamento e pega a resposta dele
+            const { data: newCrono, error } = await _supabase.from('cronograma').insert([payload]).select().single();
+            
+            // Se escolheu vincular a uma atividade, pega o ID gerado agora e salva na tabela 'atividades'
+            if (!error && newCrono && atividadeVinculadaId) {
+                await _supabase.from('atividades').update({ id_cronograma: newCrono.id }).eq('id', atividadeVinculadaId);
+            }
+        }
+        
+        modal.remove(); 
+        carregarDadosGestao(turmaId);
     };
+    
     document.getElementById('btn-f-agenda').onclick = () => modal.remove();
 }
 
@@ -569,6 +608,23 @@ async function excluirItem(id, tabela, turmaId) {
         carregarDadosGestao(turmaId);
     }
 }
+
+
+window.recorrigir = async function(progressoId, notaAtual, feedbackAtual) {
+    const novaNota = prompt("Digite a nova nota (0-10):", notaAtual);
+    if (novaNota === null) return;
+    const novoFeedback = prompt("Digite o novo feedback:", feedbackAtual) || "";
+    
+    const { error } = await _supabase.from('progresso_aluno')
+        .update({ nota: novaNota, feedback: novoFeedback })
+        .eq('id', progressoId);
+        
+    if (error) alert("Erro: " + error.message);
+    else {
+        alert("✅ Nota alterada com sucesso!");
+        carregarDadosGestao(usuarioLogado.turma_atual_id);
+    }
+};
 
 btnHome.onclick = () => { carregarTela('tpl-home'); if (usuarioLogado) btnLoginMenu.textContent = "Meu Painel"; };
 btnLoginMenu.onclick = renderizarDashboard;
