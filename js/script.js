@@ -274,20 +274,23 @@ async function carregarDadosGestao(turmaId) {
        
 
 async function salvarCorrecao(progressoId) {
-    const nota = document.getElementById(`n-${progressoId}`).value;
+    let nota = document.getElementById(`n-${progressoId}`).value;
     const feedback = document.getElementById(`f-${progressoId}`).value;
+    
     if(!nota) return alert("Insira uma nota!");
+
+    // CORREÇÃO AQUI: Troca a vírgula por ponto antes de salvar
+    nota = nota.replace(',', '.');
 
     const { error } = await _supabase.from('progresso_aluno').update({ nota, feedback }).eq('id', progressoId);
     
     if (error) alert("Erro: " + error.message);
     else {
         alert("✅ Nota Salva!");
-        // Pega o ID da turma que está na tela no momento para atualizar as listas
-        const tituloGestao = document.getElementById('txt-g-nome').innerText;
         carregarDadosGestao(usuarioLogado.turma_atual_id); 
     }
 }
+
 
 function abrirModalConteudo(turmaId, modo, item = null) {
     const clone = document.getElementById('tpl-modal-conteudo').content.cloneNode(true);
@@ -611,8 +614,14 @@ async function excluirItem(id, tabela, turmaId) {
 
 
 window.recorrigir = async function(progressoId, notaAtual, feedbackAtual) {
-    const novaNota = prompt("Digite a nova nota (0-10):", notaAtual);
-    if (novaNota === null) return;
+    let novaNota = prompt("Digite a nova nota (0-10):", notaAtual);
+    
+    // Se o usuário clicar em "Cancelar" no prompt, encerra a função
+    if (novaNota === null) return; 
+    
+    // CORREÇÃO AQUI: Troca qualquer vírgula digitada por ponto
+    novaNota = novaNota.replace(',', '.');
+    
     const novoFeedback = prompt("Digite o novo feedback:", feedbackAtual) || "";
     
     const { error } = await _supabase.from('progresso_aluno')
@@ -625,6 +634,7 @@ window.recorrigir = async function(progressoId, notaAtual, feedbackAtual) {
         carregarDadosGestao(usuarioLogado.turma_atual_id);
     }
 };
+
 
 btnHome.onclick = () => { carregarTela('tpl-home'); if (usuarioLogado) btnLoginMenu.textContent = "Meu Painel"; };
 btnLoginMenu.onclick = renderizarDashboard;
